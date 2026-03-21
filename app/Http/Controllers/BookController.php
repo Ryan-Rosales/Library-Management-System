@@ -10,6 +10,7 @@ use App\Models\Genre;
 use App\Models\MemberNotification;
 use App\Models\Shelf;
 use App\Models\User;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -128,6 +129,14 @@ class BookController extends Controller
             MemberNotification::insert($notifications);
         }
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'book "'.$book->title.'"',
+            route('books'),
+        );
+
         return back()->with('success', 'Book added successfully.');
     }
 
@@ -159,15 +168,32 @@ class BookController extends Controller
         $book->update($data);
         $this->syncBookCopyCounts($book);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'book "'.$book->title.'"',
+            route('books'),
+        );
+
         return back()->with('success', 'Book updated successfully.');
     }
 
     /**
      * Remove the specified book.
      */
-    public function destroy(Book $book): RedirectResponse
+    public function destroy(Request $request, Book $book): RedirectResponse
     {
+        $bookTitle = $book->title;
         $book->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'book "'.$bookTitle.'"',
+            route('books'),
+        );
 
         return back()->with('success', 'Book deleted successfully.');
     }

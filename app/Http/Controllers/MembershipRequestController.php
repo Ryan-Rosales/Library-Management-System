@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MembershipRequest;
 use App\Models\User;
+use App\Services\ActivityNotificationService;
 use App\Services\TransactionalMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -139,6 +140,14 @@ class MembershipRequestController extends Controller
                 ])->save();
             });
 
+            app(ActivityNotificationService::class)->notifyPeerRoleChange(
+                $request->user(),
+                'people',
+                'approved',
+                'membership request for "'.$membershipRequest->name.'"',
+                route('membership-requests.index'),
+            );
+
             return back()->with('success', 'Membership request approved and member account created.');
         } catch (ValidationException $exception) {
             throw $exception;
@@ -242,6 +251,14 @@ class MembershipRequestController extends Controller
             'seen_at' => $membershipRequest->seen_at ?? now(),
             'resolved_at' => now(),
         ])->save();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'people',
+            'rejected',
+            'membership request for "'.$membershipRequest->name.'"',
+            route('membership-requests.index'),
+        );
 
         return back()->with('success', 'Membership request rejected.');
     }

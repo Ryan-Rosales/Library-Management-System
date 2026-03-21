@@ -51,6 +51,22 @@ export interface SharedData {
             created_at: string | null;
             seen_at: string | null;
         }>;
+        activityNotifications: Array<{
+            id: number;
+            type: string;
+            title: string;
+            message: string;
+            url: string | null;
+            meta?: {
+                actor_name?: string;
+                actor_role?: 'admin' | 'staff';
+                module?: string;
+                action?: string;
+                subject?: string;
+            } | null;
+            created_at: string | null;
+            seen_at: string | null;
+        }>;
         memberNotifications: Array<{
             id: number;
             type: string;

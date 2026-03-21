@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\BookCopy;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -114,6 +115,16 @@ class BookCopyController extends Controller
             $this->syncBookCopyCounts((int) $data['book_id']);
         });
 
+        $bookTitle = Book::query()->whereKey((int) $data['book_id'])->value('title') ?? 'book';
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'inventory',
+            'added',
+            (int) $data['copies_count'].' copy/copies for "'.$bookTitle.'"',
+            route('book.copies'),
+        );
+
         return back();
     }
 
@@ -135,14 +146,34 @@ class BookCopyController extends Controller
             $this->syncBookCopyCounts($oldBookId);
         }
 
+        $bookTitle = Book::query()->whereKey((int) $bookCopy->book_id)->value('title') ?? 'book';
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'inventory',
+            'updated',
+            'copy "'.$bookCopy->accession_number.'" for "'.$bookTitle.'"',
+            route('book.copies'),
+        );
+
         return back();
     }
 
-    public function destroy(BookCopy $bookCopy): RedirectResponse
+    public function destroy(Request $request, BookCopy $bookCopy): RedirectResponse
     {
         $bookId = (int) $bookCopy->book_id;
+        $accessionNumber = $bookCopy->accession_number;
+        $bookTitle = Book::query()->whereKey($bookId)->value('title') ?? 'book';
         $bookCopy->delete();
         $this->syncBookCopyCounts($bookId);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'inventory',
+            'deleted',
+            'copy "'.$accessionNumber.'" for "'.$bookTitle.'"',
+            route('book.copies'),
+        );
 
         return back();
     }

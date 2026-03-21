@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -52,14 +53,14 @@ class UserManagementController extends Controller
         return $this->updateByRole($request, $user, 'staff');
     }
 
-    public function destroyMember(User $user): RedirectResponse
+    public function destroyMember(Request $request, User $user): RedirectResponse
     {
-        return $this->destroyByRole($user, 'member');
+        return $this->destroyByRole($request, $user, 'member');
     }
 
-    public function destroyStaff(User $user): RedirectResponse
+    public function destroyStaff(Request $request, User $user): RedirectResponse
     {
-        return $this->destroyByRole($user, 'staff');
+        return $this->destroyByRole($request, $user, 'staff');
     }
 
     private function renderRolePage(Request $request, string $role, string $title, array $routeNames): Response
@@ -163,7 +164,15 @@ class UserManagementController extends Controller
             ]);
         }
 
-        User::create($payload);
+        $createdUser = User::create($payload);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'people',
+            'added',
+            $role.' account "'.$createdUser->name.'"',
+            route($role === 'staff' ? 'staff' : 'members'),
+        );
 
         return back()->with('success', ucfirst($role).' account created successfully.');
     }
@@ -215,16 +224,33 @@ class UserManagementController extends Controller
 
         $user->update($payload);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'people',
+            'updated',
+            $role.' account "'.$user->name.'"',
+            route($role === 'staff' ? 'staff' : 'members'),
+        );
+
         return back()->with('success', ucfirst($role).' account updated successfully.');
     }
 
-    private function destroyByRole(User $user, string $role): RedirectResponse
+    private function destroyByRole(Request $request, User $user, string $role): RedirectResponse
     {
         if ($user->role !== $role) {
             abort(404);
         }
 
+        $deletedName = $user->name;
         $user->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'people',
+            'deleted',
+            $role.' account "'.$deletedName.'"',
+            route($role === 'staff' ? 'staff' : 'members'),
+        );
 
         return back()->with('success', ucfirst($role).' account deleted successfully.');
     }

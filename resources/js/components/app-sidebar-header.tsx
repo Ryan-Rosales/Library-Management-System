@@ -9,7 +9,7 @@ import { useState } from 'react';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const page = usePage<SharedData>();
-    const notifications = page.props.notifications || { passwordChangeRequests: [], membershipRequests: [], memberNotifications: [], unreadCount: 0 };
+    const notifications = page.props.notifications || { passwordChangeRequests: [], membershipRequests: [], activityNotifications: [], memberNotifications: [], unreadCount: 0 };
     const role = page.props.auth?.user?.role;
     const isAdmin = role === 'admin';
     const isStaff = role === 'staff';
@@ -43,6 +43,14 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
         setIsOpen(false);
 
         router.post(route('member.notifications.read', notificationId), {}, {
+            preserveScroll: true,
+        });
+    };
+
+    const openActivityNotification = (notificationId: number) => {
+        setIsOpen(false);
+
+        router.post(route('activity.notifications.read', notificationId), {}, {
             preserveScroll: true,
         });
     };
@@ -112,8 +120,49 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             ))}
 
                             {canViewPasswordRequests && notifications.passwordChangeRequests.length === 0 && notifications.membershipRequests.length === 0 && (
+                                notifications.activityNotifications.length === 0 && (
                                 <p className="px-2 py-1.5 text-xs text-muted-foreground">No pending notifications.</p>
+                                )
                             )}
+
+                            {canViewPasswordRequests && notifications.activityNotifications.length > 0 && (
+                                <p className="px-2 pt-1 pb-1 text-[10px] font-semibold tracking-[0.09em] text-[#5b7469] uppercase dark:text-[#9cb9ae]">
+                                    Team activity
+                                </p>
+                            )}
+
+                            {canViewPasswordRequests && notifications.activityNotifications.map((notification) => {
+                                const actorName = notification.meta?.actor_name;
+                                const actorRole = notification.meta?.actor_role;
+
+                                return (
+                                    <button
+                                        key={notification.id}
+                                        type="button"
+                                        onClick={() => openActivityNotification(notification.id)}
+                                        className="mb-1 block w-full rounded-lg border border-border/65 bg-background/70 px-2.5 py-2 text-left text-xs transition hover:border-[#7ec6a8]/55 hover:bg-[#eef8f3] dark:bg-white/5 dark:hover:bg-white/10"
+                                    >
+                                        <div className="mb-0.5 flex items-center justify-between gap-2">
+                                            <p className="font-semibold text-foreground">{notification.title}</p>
+                                            <div className="flex items-center gap-1.5">
+                                                {actorRole && (
+                                                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                                        actorRole === 'admin'
+                                                            ? 'bg-[#fef2e6] text-[#8a5a20] dark:bg-[#3c2b18] dark:text-[#f0c68d]'
+                                                            : 'bg-[#e6f1fb] text-[#256090] dark:bg-[#1a3142] dark:text-[#a6d4fb]'
+                                                    }`}>
+                                                        {actorRole}
+                                                    </span>
+                                                )}
+                                                {notification.seen_at === null && <span className="h-2 w-2 rounded-full bg-rose-500" />}
+                                            </div>
+                                        </div>
+                                        {actorName && <p className="text-muted-foreground">By: {actorName}</p>}
+                                        <p className="mt-1 text-foreground/85">{notification.message}</p>
+                                        <p className="mt-1 text-[11px] text-muted-foreground">{notification.created_at || ''}</p>
+                                    </button>
+                                );
+                            })}
 
                             {canViewPasswordRequests && notifications.passwordChangeRequests.length > 0 && (
                                 <p className="px-2 pb-1 text-[10px] font-semibold tracking-[0.09em] text-[#5b7469] uppercase dark:text-[#9cb9ae]">

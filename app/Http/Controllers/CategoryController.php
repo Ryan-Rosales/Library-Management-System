@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,7 +51,15 @@ class CategoryController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Category::create($data);
+        $category = Category::create($data);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'category "'.$category->name.'"',
+            route('categories'),
+        );
 
         return back();
     }
@@ -64,12 +73,29 @@ class CategoryController extends Controller
 
         $category->update($data);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'category "'.$category->name.'"',
+            route('categories'),
+        );
+
         return back();
     }
 
-    public function destroy(Category $category): RedirectResponse
+    public function destroy(Request $request, Category $category): RedirectResponse
     {
+        $categoryName = $category->name;
         $category->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'category "'.$categoryName.'"',
+            route('categories'),
+        );
 
         return back();
     }

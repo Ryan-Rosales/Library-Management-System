@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,7 +51,15 @@ class LocationController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Location::create($data);
+        $location = Location::create($data);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'location "'.$location->name.'"',
+            route('locations'),
+        );
 
         return back();
     }
@@ -64,12 +73,29 @@ class LocationController extends Controller
 
         $location->update($data);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'location "'.$location->name.'"',
+            route('locations'),
+        );
+
         return back();
     }
 
-    public function destroy(Location $location): RedirectResponse
+    public function destroy(Request $request, Location $location): RedirectResponse
     {
+        $locationName = $location->name;
         $location->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'location "'.$locationName.'"',
+            route('locations'),
+        );
 
         return back();
     }

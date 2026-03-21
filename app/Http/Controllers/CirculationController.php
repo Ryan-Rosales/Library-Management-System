@@ -8,6 +8,7 @@ use App\Models\BookReservation;
 use App\Models\CirculationLog;
 use App\Models\MemberNotification;
 use App\Models\User;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -277,6 +278,15 @@ class CirculationController extends Controller
         $this->syncBookAvailability((int) $data['book_id']);
 
         $quantity = (int) $data['borrow_quantity'];
+        $bookTitle = Book::query()->whereKey((int) $data['book_id'])->value('title') ?? 'book';
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'circulation',
+            'borrowed',
+            $quantity.' copy/copies of "'.$bookTitle.'"',
+            route('circulation.borrow.page'),
+        );
 
         return back()->with('success', "{$quantity} book copy/copies borrowed successfully.");
     }
@@ -389,7 +399,16 @@ class CirculationController extends Controller
         $bookCopies->pluck('book_id')->unique()->each(fn (int $bookId) => $this->syncBookAvailability($bookId));
 
         $returnedCount = $bookCopies->count();
+        $bookCount = $bookCopies->pluck('book_id')->unique()->count();
         $message = "{$returnedCount} book copy/copies returned successfully.";
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'circulation',
+            'returned',
+            $returnedCount.' copy/copies across '.$bookCount.' title(s)',
+            route('circulation.return.page'),
+        );
 
         if ($totalFine > 0) {
             $message .= " Total overdue fine: P {$totalFine}.00.";

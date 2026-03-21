@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Author;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,7 +57,15 @@ class AuthorController extends Controller
             'biography' => ['nullable', 'string', 'max:1500'],
         ]);
 
-        Author::create($data);
+        $author = Author::create($data);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'author "'.$author->name.'"',
+            route('authors'),
+        );
 
         return back();
     }
@@ -71,12 +80,29 @@ class AuthorController extends Controller
 
         $author->update($data);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'author "'.$author->name.'"',
+            route('authors'),
+        );
+
         return back();
     }
 
-    public function destroy(Author $author): RedirectResponse
+    public function destroy(Request $request, Author $author): RedirectResponse
     {
+        $authorName = $author->name;
         $author->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'author "'.$authorName.'"',
+            route('authors'),
+        );
 
         return back();
     }

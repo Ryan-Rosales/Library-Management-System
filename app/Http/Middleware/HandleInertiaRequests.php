@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
             return [
                 'passwordChangeRequests' => [],
                 'membershipRequests' => [],
+                'activityNotifications' => [],
                 'memberNotifications' => [],
                 'membershipPendingCount' => 0,
                 'unreadCount' => 0,
@@ -92,6 +93,7 @@ class HandleInertiaRequests extends Middleware
             return [
                 'passwordChangeRequests' => [],
                 'membershipRequests' => [],
+                'activityNotifications' => [],
                 'memberNotifications' => $memberNotifications,
                 'membershipPendingCount' => 0,
                 'unreadCount' => (clone $memberBaseQuery)->whereNull('seen_at')->count(),
@@ -102,6 +104,7 @@ class HandleInertiaRequests extends Middleware
             return [
                 'passwordChangeRequests' => [],
                 'membershipRequests' => [],
+                'activityNotifications' => [],
                 'memberNotifications' => [],
                 'membershipPendingCount' => 0,
                 'unreadCount' => 0,
@@ -136,6 +139,28 @@ class HandleInertiaRequests extends Middleware
             ->values();
 
         $unreadCount = (clone $baseQuery)->whereNull('seen_at')->count();
+
+        $activityBaseQuery = MemberNotification::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'role_activity');
+
+        $activityNotifications = (clone $activityBaseQuery)
+            ->latest()
+            ->take(10)
+            ->get(['id', 'type', 'title', 'message', 'url', 'meta', 'created_at', 'seen_at'])
+            ->map(fn (MemberNotification $item) => [
+                'id' => $item->id,
+                'type' => $item->type,
+                'title' => $item->title,
+                'message' => $item->message,
+                'url' => $item->url,
+                'meta' => $item->meta,
+                'created_at' => optional($item->created_at)->toDateTimeString(),
+                'seen_at' => optional($item->seen_at)->toDateTimeString(),
+            ])
+            ->values();
+
+        $activityUnreadCount = (clone $activityBaseQuery)->whereNull('seen_at')->count();
 
         $membershipRequests = collect();
         $membershipUnreadCount = 0;
@@ -186,9 +211,10 @@ class HandleInertiaRequests extends Middleware
         return [
             'passwordChangeRequests' => $requests,
             'membershipRequests' => $membershipRequests,
+            'activityNotifications' => $activityNotifications,
             'memberNotifications' => [],
             'membershipPendingCount' => $membershipPendingCount,
-            'unreadCount' => $unreadCount + $membershipUnreadCount,
+            'unreadCount' => $unreadCount + $membershipUnreadCount + $activityUnreadCount,
         ];
     }
 }

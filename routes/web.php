@@ -16,6 +16,7 @@ use App\Http\Controllers\PasswordChangeRequestController;
 use App\Http\Controllers\ShelfController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\StaffPenaltyController;
+use App\Http\Controllers\TeamActivityController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -117,6 +118,8 @@ Route::middleware(['auth'])->group(function () {
         });
 
         Route::get('reports', [AnalyticsController::class, 'index'])->name('reports');
+        Route::get('team-activity', [TeamActivityController::class, 'index'])->name('team-activity.index');
+        Route::post('team-activity/mark-all-read', [TeamActivityController::class, 'markAllRead'])->name('team-activity.read-all');
 
         Route::get('membership-requests', [MembershipRequestController::class, 'index'])->name('membership-requests.index');
         Route::post('membership-requests/{membershipRequest}/mark-read', [MembershipRequestController::class, 'markRead'])->name('membership-requests.mark-read');
@@ -128,6 +131,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('password-change-requests.mark-read');
         Route::post('notifications/password-change/mark-all-read', [PasswordChangeRequestController::class, 'markAllRead'])
             ->name('password-change-requests.mark-all-read');
+        Route::post('notifications/activity/{memberNotification}/mark-read', [MemberNotificationController::class, 'markRead'])
+            ->name('activity.notifications.read');
     });
 });
 

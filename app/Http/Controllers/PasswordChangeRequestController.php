@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MemberNotification;
 use App\Models\MembershipRequest;
 use App\Models\PasswordChangeRequest;
 use Illuminate\Http\RedirectResponse;
@@ -54,6 +55,14 @@ class PasswordChangeRequestController extends Controller
                     'seen_at' => now(),
                 ]);
         }
+
+        MemberNotification::query()
+            ->where('user_id', $request->user()?->id)
+            ->where('type', 'role_activity')
+            ->whereNull('seen_at')
+            ->update([
+                'seen_at' => now(),
+            ]);
 
         return back();
     }

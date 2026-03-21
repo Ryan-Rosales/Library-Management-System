@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Location;
 use App\Models\Shelf;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -74,7 +75,15 @@ class ShelfController extends Controller
         $nextSequence = ((int) Shelf::query()->max('id')) + 1;
         $data['code'] = 'SH-'.str_pad((string) $nextSequence, 4, '0', STR_PAD_LEFT);
 
-        Shelf::create($data);
+        $shelf = Shelf::create($data);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'shelf "'.$shelf->code.' - '.$shelf->name.'"',
+            route('shelves'),
+        );
 
         return back();
     }
@@ -89,12 +98,29 @@ class ShelfController extends Controller
 
         $shelf->update($data);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'shelf "'.$shelf->code.' - '.$shelf->name.'"',
+            route('shelves'),
+        );
+
         return back();
     }
 
-    public function destroy(Shelf $shelf): RedirectResponse
+    public function destroy(Request $request, Shelf $shelf): RedirectResponse
     {
+        $shelfLabel = $shelf->code.' - '.$shelf->name;
         $shelf->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'shelf "'.$shelfLabel.'"',
+            route('shelves'),
+        );
 
         return back();
     }

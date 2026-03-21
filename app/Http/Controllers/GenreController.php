@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Genre;
+use App\Services\ActivityNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,7 +51,15 @@ class GenreController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Genre::create($data);
+        $genre = Genre::create($data);
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'added',
+            'genre "'.$genre->name.'"',
+            route('genres'),
+        );
 
         return back();
     }
@@ -64,12 +73,29 @@ class GenreController extends Controller
 
         $genre->update($data);
 
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'updated',
+            'genre "'.$genre->name.'"',
+            route('genres'),
+        );
+
         return back();
     }
 
-    public function destroy(Genre $genre): RedirectResponse
+    public function destroy(Request $request, Genre $genre): RedirectResponse
     {
+        $genreName = $genre->name;
         $genre->delete();
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'catalog',
+            'deleted',
+            'genre "'.$genreName.'"',
+            route('genres'),
+        );
 
         return back();
     }
