@@ -1,0 +1,17 @@
+@media (min-width: 1024px) {
+    .admin-zoom-content {
+        zoom: 0.75;
+        width: 133.33%;
+    }
+}
+
+@supports not (zoom: 1) {
+    @media (min-width: 1024px) {
+        .admin-zoom-content {
+            transform: scale(0.75);
+            transform-origin: top left;
+            width: 133.33%;
+            min-height: 133.33vh;
+        }
+    }
+}

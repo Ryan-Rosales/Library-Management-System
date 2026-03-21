@@ -1,0 +1,150 @@
+@media (min-width: 1360px) and (min-height: 700px) {
+    .auth-baseline-grid {
+        grid-template-columns: 1.48fr 1fr;
+    }
+
+    .auth-left-pane {
+        min-height: 100%;
+    }
+
+    .auth-brand-pane {
+        padding: 30px 44px 24px;
+    }
+
+    .auth-brand-strip {
+        border-radius: 20px;
+        padding: 14px 16px;
+    }
+
+    .auth-hero-section {
+        padding-top: 18px;
+        padding-bottom: 14px;
+    }
+
+    .auth-hero-title {
+        font-size: 4.45rem;
+        line-height: 0.99;
+    }
+
+    .auth-hero-copy {
+        margin-top: 20px;
+        max-width: 620px;
+        font-size: 2.05rem;
+        line-height: 1.45;
+    }
+
+    .auth-stats-section {
+        padding-top: 18px;
+    }
+
+    .auth-login-shell {
+        max-width: 575px;
+        padding: 18px 20px;
+    }
+
+    .auth-login-card {
+        border-radius: 30px;
+        padding: 26px 30px 22px;
+    }
+
+    .auth-login-title {
+        font-size: 4.1rem;
+        line-height: 0.95;
+    }
+}
+
+@media (min-width: 1360px) and (max-height: 780px) {
+    .auth-brand-pane {
+        padding-top: 24px;
+        padding-bottom: 16px;
+    }
+
+    .auth-hero-title {
+        font-size: 4.05rem;
+    }
+
+    .auth-hero-copy {
+        font-size: 1.95rem;
+    }
+
+    .auth-login-card {
+        padding-top: 22px;
+        padding-bottom: 18px;
+    }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+    .auth-brand-pane {
+        padding-top: 22px;
+        padding-bottom: 18px;
+    }
+
+    .auth-hero-section {
+        padding-top: 12px;
+        padding-bottom: 10px;
+    }
+
+    .auth-hero-title {
+        font-size: 3.9rem;
+    }
+
+    .auth-hero-copy {
+        margin-top: 14px;
+        font-size: 1.85rem;
+    }
+
+    .auth-login-shell {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .auth-login-card {
+        padding-top: 22px;
+        padding-bottom: 18px;
+    }
+
+    .auth-login-title {
+        font-size: 3.6rem;
+    }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+    .auth-brand-pane {
+        padding-top: 18px;
+        padding-bottom: 14px;
+    }
+
+    .auth-hero-title {
+        font-size: 3.5rem;
+        line-height: 1.0;
+    }
+
+    .auth-hero-copy {
+        margin-top: 10px;
+        font-size: 1.65rem;
+        line-height: 1.35;
+    }
+
+    .auth-stats-section {
+        padding-top: 14px;
+    }
+
+    .auth-shelf-bar {
+        height: 3.2rem;
+    }
+
+    .auth-login-shell {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .auth-login-card {
+        padding-top: 20px;
+        padding-bottom: 16px;
+    }
+
+    .auth-login-title {
+        font-size: 3.25rem;
+        line-height: 0.98;
+    }
+}

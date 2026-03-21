@@ -1,0 +1,10 @@
+body,
+main,
+section,
+article,
+button,
+input,
+a,
+header {
+    transition: background-color 280ms ease, border-color 280ms ease, color 280ms ease, box-shadow 320ms ease;
+}

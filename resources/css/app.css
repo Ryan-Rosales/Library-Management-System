@@ -1,0 +1,274 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+:root {
+    --background: hsl(0, 0%, 100%);
+    --foreground: hsl(0, 0%, 3.9%);
+    --card: hsl(0, 0%, 100%);
+    --card-foreground: hsl(0, 0%, 3.9%);
+    --popover: hsl(0, 0%, 100%);
+    --popover-foreground: hsl(0, 0%, 3.9%);
+    --primary: hsl(0, 0%, 9%);
+    --primary-foreground: hsl(0, 0%, 98%);
+    --secondary: hsl(0, 0%, 96.1%);
+    --secondary-foreground: hsl(0, 0%, 9%);
+    --muted: hsl(0, 0%, 96.1%);
+    --muted-foreground: hsl(0, 0%, 45.1%);
+    --accent: hsl(0, 0%, 96.1%);
+    --accent-foreground: hsl(0, 0%, 9%);
+    --destructive: hsl(0, 84.2%, 60.2%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+    --border: hsl(0, 0%, 92.8%);
+    --input: hsl(0, 0%, 89.8%);
+    --ring: hsl(0, 0%, 3.9%);
+    --chart-1: hsl(12, 76%, 61%);
+    --chart-2: hsl(173, 58%, 39%);
+    --chart-3: hsl(197, 37%, 24%);
+    --chart-4: hsl(43, 74%, 66%);
+    --chart-5: hsl(27, 87%, 67%);
+    --radius: 0.5rem;
+    --sidebar-background: hsl(166, 36%, 98%);
+    --sidebar-foreground: hsl(162, 28%, 25%);
+    --sidebar-primary: hsl(160, 54%, 30%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-accent: hsl(160, 52%, 95%);
+    --sidebar-accent-foreground: hsl(160, 40%, 28%);
+    --sidebar-border: hsl(165, 25%, 85%);
+    --sidebar-ring: hsl(157, 58%, 48%);
+    --glass-surface-rgb: 255, 255, 255;
+    --glass-surface-strong-rgb: 246, 252, 255;
+    --glass-border-rgb: 223, 239, 232;
+    --glass-shadow: 0 24px 54px rgba(26, 68, 54, 0.14);
+}
+
+.dark {
+    --background: hsl(0, 0%, 3.9%);
+    --foreground: hsl(0, 0%, 98%);
+    --card: hsl(0, 0%, 3.9%);
+    --card-foreground: hsl(0, 0%, 98%);
+    --popover: hsl(0, 0%, 3.9%);
+    --popover-foreground: hsl(0, 0%, 98%);
+    --primary: hsl(0, 0%, 98%);
+    --primary-foreground: hsl(0, 0%, 9%);
+    --secondary: hsl(0, 0%, 14.9%);
+    --secondary-foreground: hsl(0, 0%, 98%);
+    --muted: hsl(0, 0%, 6.9%);
+    --muted-foreground: hsl(0, 0%, 63.9%);
+    --accent: hsl(0, 0%, 14.9%);
+    --accent-foreground: hsl(0, 0%, 98%);
+    --destructive: hsl(0, 84%, 60%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+    --border: hsl(0, 0%, 14.9%);
+    --input: hsl(0, 0%, 14.9%);
+    --ring: hsl(0, 0%, 83.1%);
+    --chart-1: hsl(220, 70%, 50%);
+    --chart-2: hsl(160, 60%, 45%);
+    --chart-3: hsl(30, 80%, 55%);
+    --chart-4: hsl(280, 65%, 60%);
+    --chart-5: hsl(340, 75%, 55%);
+    --sidebar-background: hsl(194, 42%, 11%);
+    --sidebar-foreground: hsl(156, 32%, 85%);
+    --sidebar-primary: hsl(154, 58%, 62%);
+    --sidebar-primary-foreground: hsl(164, 65%, 10%);
+    --sidebar-accent: hsl(191, 36%, 18%);
+    --sidebar-accent-foreground: hsl(154, 38%, 88%);
+    --sidebar-border: hsl(191, 31%, 25%);
+    --sidebar-ring: hsl(157, 59%, 56%);
+    --glass-surface-rgb: 16, 30, 39;
+    --glass-surface-strong-rgb: 13, 26, 35;
+    --glass-border-rgb: 86, 122, 136;
+    --glass-shadow: 0 28px 62px rgba(1, 9, 14, 0.56);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+@layer components {
+    .app-glass-admin .page-enter {
+        position: relative;
+        isolation: isolate;
+    }
+
+    .app-glass-admin .page-enter::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 15% 12%, rgba(132, 223, 186, 0.17), transparent 34%),
+            radial-gradient(circle at 83% 78%, rgba(133, 179, 255, 0.2), transparent 36%);
+        z-index: -1;
+    }
+
+    .app-glass-admin .page-enter section.rounded-3xl,
+    .app-glass-admin .page-enter div.rounded-3xl.border {
+        background: linear-gradient(140deg, rgba(var(--glass-surface-rgb), 0.8) 0%, rgba(var(--glass-surface-strong-rgb), 0.72) 100%) !important;
+        border-color: rgba(var(--glass-border-rgb), 0.62) !important;
+        box-shadow: var(--glass-shadow) !important;
+        backdrop-filter: blur(16px) saturate(134%);
+        -webkit-backdrop-filter: blur(16px) saturate(134%);
+    }
+
+    .app-glass-admin .page-enter .rounded-2xl.border,
+    .app-glass-admin .page-enter .rounded-xl.border {
+        background-color: rgba(var(--glass-surface-rgb), 0.58) !important;
+        border-color: rgba(var(--glass-border-rgb), 0.58) !important;
+        backdrop-filter: blur(12px) saturate(126%);
+        -webkit-backdrop-filter: blur(12px) saturate(126%);
+    }
+
+    .app-glass-admin .page-enter .overflow-x-auto.rounded-2xl.border {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    }
+
+    .app-glass-admin .page-enter input:not([type='checkbox']):not([type='radio']),
+    .app-glass-admin .page-enter select,
+    .app-glass-admin .page-enter textarea {
+        background: rgba(var(--glass-surface-rgb), 0.8) !important;
+        border-color: rgba(var(--glass-border-rgb), 0.68) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 10px 22px rgba(24, 62, 50, 0.1);
+        backdrop-filter: blur(9px) saturate(122%);
+        -webkit-backdrop-filter: blur(9px) saturate(122%);
+    }
+
+    .app-glass-admin .page-enter select {
+        padding-right: 2.3rem;
+        color-scheme: light;
+        background-image: linear-gradient(45deg, transparent 50%, rgba(50, 89, 74, 0.9) 50%),
+            linear-gradient(135deg, rgba(50, 89, 74, 0.9) 50%, transparent 50%);
+        background-position: calc(100% - 1.05rem) calc(50% + 2px), calc(100% - 0.75rem) calc(50% + 2px);
+        background-size: 0.38rem 0.38rem, 0.38rem 0.38rem;
+        background-repeat: no-repeat;
+        appearance: none;
+    }
+
+    .app-glass-admin .page-enter select:focus {
+        border-color: rgba(71, 167, 124, 0.72) !important;
+        box-shadow: 0 0 0 3px rgba(109, 197, 158, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 10px 22px rgba(24, 62, 50, 0.1);
+    }
+
+    .app-glass-admin .page-enter select option,
+    .app-glass-admin .page-enter select optgroup {
+        background-color: rgba(236, 246, 242, 0.98);
+        color: #1f3f34;
+    }
+
+    .app-glass-admin .page-enter select option:checked {
+        background-color: #b8d3c6;
+        color: #173529;
+    }
+
+    .app-glass-admin .page-enter table thead {
+        background: linear-gradient(125deg, rgba(var(--glass-surface-rgb), 0.9) 0%, rgba(var(--glass-surface-strong-rgb), 0.8) 100%) !important;
+        border-bottom: 1px solid rgba(var(--glass-border-rgb), 0.56);
+    }
+
+    .dark .app-glass-admin .page-enter::before {
+        background: radial-gradient(circle at 17% 12%, rgba(70, 170, 143, 0.17), transparent 34%),
+            radial-gradient(circle at 83% 78%, rgba(92, 141, 228, 0.2), transparent 36%);
+    }
+
+    .dark .app-glass-admin .page-enter select {
+        color-scheme: dark;
+        background-image: linear-gradient(45deg, transparent 50%, rgba(205, 235, 223, 0.92) 50%),
+            linear-gradient(135deg, rgba(205, 235, 223, 0.92) 50%, transparent 50%);
+    }
+
+    .dark .app-glass-admin .page-enter select option,
+    .dark .app-glass-admin .page-enter select optgroup {
+        background-color: #17303b;
+        color: #dcf5ea;
+    }
+
+    .dark .app-glass-admin .page-enter select option:checked {
+        background-color: #245164;
+        color: #f0fffa;
+    }
+}
+
+@import './base/animations.css';
+@import './layout/transitions.css';
+@import './layout/admin-zoom.css';
+@import './components/sidebar.css';
+@import './pages/auth.css';
