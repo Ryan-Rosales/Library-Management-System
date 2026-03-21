@@ -30,7 +30,6 @@ class MembershipRequestApprovalTest extends TestCase
 
         $response = $this->actingAs($staff)->post(route('membership-requests.approve', $membershipRequest), [
             'member_password' => 'TempPass123!',
-            'review_notes' => 'Approved by staff.',
         ]);
 
         $response->assertSessionHas('success');
@@ -64,10 +63,9 @@ class MembershipRequestApprovalTest extends TestCase
 
         $response = $this->actingAs($staff)->post(route('membership-requests.approve', $membershipRequest), [
             'member_password' => 'TempPass123!',
-            'review_notes' => 'Approved by staff.',
         ]);
 
-        $response->assertSessionHasErrors('review_notes');
+        $response->assertSessionHasErrors('member_password');
 
         $this->assertDatabaseMissing('users', [
             'email' => $membershipRequest->email,

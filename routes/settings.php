@@ -17,8 +17,11 @@ Route::middleware('auth')->group(function () {
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::get('settings/user-account-control', [UserAccountControlController::class, 'index'])->name('settings.user-account-control');
+    Route::get('settings/password-reset-audit', [UserAccountControlController::class, 'audit'])->name('settings.password-reset-audit');
     Route::patch('settings/user-account-control/{user}/email', [UserAccountControlController::class, 'updateEmail'])
         ->name('settings.user-account-control.email.update');
     Route::put('settings/user-account-control/{user}/password', [UserAccountControlController::class, 'updatePassword'])
         ->name('settings.user-account-control.password.update');
+    Route::post('settings/user-account-control/{user}/password/reject', [UserAccountControlController::class, 'rejectPassword'])
+        ->name('settings.user-account-control.password.reject');
 });

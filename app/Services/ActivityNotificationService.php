@@ -39,13 +39,13 @@ class ActivityNotificationService
             'title' => ucfirst($module).' update',
             'message' => $message,
             'url' => $url,
-            'meta' => [
+            'meta' => json_encode([
                 'actor_name' => $actor->name,
                 'actor_role' => $actor->role,
                 'module' => $module,
                 'action' => $action,
                 'subject' => $subject,
-            ],
+            ]),
             'created_at' => $now,
             'updated_at' => $now,
         ])->all();

@@ -4,15 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\ActivityNotificationService;
+use App\Services\TransactionalMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class UserManagementController extends Controller
 {
+    public function __construct(
+        private readonly TransactionalMailService $mailService,
+    ) {
+    }
+
     public function members(Request $request): Response
     {
         return $this->renderRolePage($request, 'member', 'Members', [
@@ -129,7 +137,9 @@ class UserManagementController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => $role === 'member'
+                ? ['nullable', 'string', 'min:8', 'max:64']
+                : ['required', 'string', 'min:8', 'max:64'],
         ];
 
         if ($role === 'member') {
@@ -145,11 +155,28 @@ class UserManagementController extends Controller
 
         $data = $request->validate($rules);
 
+        $normalizedEmail = strtolower((string) $data['email']);
+
+        $emailExists = User::query()
+            ->whereRaw('LOWER(email) = ?', [$normalizedEmail])
+            ->exists();
+
+        if ($emailExists) {
+            return back()->withErrors([
+                'email' => 'An account with this email already exists.',
+            ]);
+        }
+
+        $providedPassword = trim((string) ($data['password'] ?? ''));
+        $plainPassword = $role === 'member'
+            ? ($providedPassword !== '' ? $providedPassword : Str::password(12))
+            : $providedPassword;
+
         $payload = [
             'name' => $data['name'],
-            'email' => $data['email'],
+            'email' => $normalizedEmail,
             'role' => $role,
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($plainPassword),
             'email_verified_at' => now(),
         ];
 
@@ -161,10 +188,27 @@ class UserManagementController extends Controller
                 'city_municipality_name' => $data['city_municipality_name'],
                 'barangay_name' => $data['barangay_name'],
                 'street_address' => $data['street_address'] ?? null,
+                'must_change_password' => true,
             ]);
         }
 
         $createdUser = User::create($payload);
+
+        if ($role === 'member') {
+            try {
+                $this->mailService->sendMemberWelcomeCredentials(
+                    $createdUser->email,
+                    $createdUser->name,
+                    $plainPassword,
+                );
+            } catch (Throwable $exception) {
+                $createdUser->delete();
+
+                return back()->withErrors([
+                    'email' => 'Member account was not created because welcome email could not be sent: '.$exception->getMessage(),
+                ]);
+            }
+        }
 
         app(ActivityNotificationService::class)->notifyPeerRoleChange(
             $request->user(),
@@ -174,7 +218,11 @@ class UserManagementController extends Controller
             route($role === 'staff' ? 'staff' : 'members'),
         );
 
-        return back()->with('success', ucfirst($role).' account created successfully.');
+        $successMessage = $role === 'member'
+            ? 'Member account created successfully. Login credentials were sent to member Gmail.'
+            : ucfirst($role).' account created successfully.';
+
+        return back()->with('success', $successMessage);
     }
 
     private function updateByRole(Request $request, User $user, string $role): RedirectResponse
@@ -202,9 +250,22 @@ class UserManagementController extends Controller
 
         $data = $request->validate($rules);
 
+        $normalizedEmail = strtolower((string) $data['email']);
+
+        $emailExists = User::query()
+            ->whereRaw('LOWER(email) = ?', [$normalizedEmail])
+            ->where('id', '!=', $user->id)
+            ->exists();
+
+        if ($emailExists) {
+            return back()->withErrors([
+                'email' => 'An account with this email already exists.',
+            ]);
+        }
+
         $payload = [
             'name' => $data['name'],
-            'email' => $data['email'],
+            'email' => $normalizedEmail,
         ];
 
         if ($role === 'member') {

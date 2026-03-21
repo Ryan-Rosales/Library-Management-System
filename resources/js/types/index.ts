@@ -76,6 +76,7 @@ export interface SharedData {
             created_at: string | null;
             seen_at: string | null;
         }>;
+        passwordPendingCount: number;
         membershipPendingCount: number;
         unreadCount: number;
     };
@@ -88,6 +89,7 @@ export interface User {
     email: string;
     role?: 'admin' | 'staff' | 'member';
     avatar?: string;
+    must_change_password?: boolean;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

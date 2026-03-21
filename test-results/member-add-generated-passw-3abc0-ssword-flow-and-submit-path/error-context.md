@@ -1,0 +1,224 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e7]:
+      - list [ref=e9]:
+        - listitem [ref=e10]:
+          - link "Libraria Libraria" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+            - img "Libraria" [ref=e13]
+            - generic [ref=e15]: Libraria
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: OVERVIEW
+          - list [ref=e21]:
+            - listitem [ref=e22]:
+              - link "Dashboard" [ref=e23] [cursor=pointer]:
+                - /url: /dashboard
+                - img [ref=e24]
+                - generic [ref=e30]: Dashboard
+            - listitem [ref=e31]:
+              - link "Reports" [ref=e32] [cursor=pointer]:
+                - /url: /reports
+                - img [ref=e33]
+                - generic [ref=e36]: Reports
+            - listitem [ref=e37]:
+              - link "Team Activity" [ref=e38] [cursor=pointer]:
+                - /url: /team-activity
+                - img [ref=e39]
+                - generic [ref=e45]: Team Activity
+        - generic [ref=e46]:
+          - button "CATALOG" [expanded] [ref=e47]:
+            - generic [ref=e48]: CATALOG
+            - img [ref=e49]
+          - list [ref=e52]:
+            - listitem [ref=e53]:
+              - link "Books" [ref=e54] [cursor=pointer]:
+                - /url: /books
+                - img [ref=e55]
+                - generic [ref=e60]: Books
+            - listitem [ref=e61]:
+              - link "Categories" [ref=e62] [cursor=pointer]:
+                - /url: /categories
+                - img [ref=e63]
+                - generic [ref=e66]: Categories
+            - listitem [ref=e67]:
+              - link "Genres" [ref=e68] [cursor=pointer]:
+                - /url: /genres
+                - img [ref=e69]
+                - generic [ref=e73]: Genres
+            - listitem [ref=e74]:
+              - link "Authors" [ref=e75] [cursor=pointer]:
+                - /url: /authors
+                - img [ref=e76]
+                - generic [ref=e80]: Authors
+        - generic [ref=e81]:
+          - button "INVENTORY" [expanded] [ref=e82]:
+            - generic [ref=e83]: INVENTORY
+            - img [ref=e84]
+          - list [ref=e87]:
+            - listitem [ref=e88]:
+              - link "Shelves" [ref=e89] [cursor=pointer]:
+                - /url: /shelves
+                - img [ref=e90]
+                - generic [ref=e94]: Shelves
+            - listitem [ref=e95]:
+              - link "Locations" [ref=e96] [cursor=pointer]:
+                - /url: /locations
+                - img [ref=e97]
+                - generic [ref=e102]: Locations
+            - listitem [ref=e103]:
+              - link "Book Copies" [ref=e104] [cursor=pointer]:
+                - /url: /book-copies
+                - img [ref=e105]
+                - generic [ref=e108]: Book Copies
+        - generic [ref=e109]:
+          - button "CIRCULATION" [expanded] [ref=e110]:
+            - generic [ref=e111]: CIRCULATION
+            - img [ref=e112]
+          - list [ref=e115]:
+            - listitem [ref=e116]:
+              - link "Borrow" [ref=e117] [cursor=pointer]:
+                - /url: /borrow
+                - img [ref=e118]
+                - generic [ref=e122]: Borrow
+            - listitem [ref=e123]:
+              - link "Return" [ref=e124] [cursor=pointer]:
+                - /url: /return
+                - img [ref=e125]
+                - generic [ref=e128]: Return
+            - listitem [ref=e129]:
+              - link "History" [ref=e130] [cursor=pointer]:
+                - /url: /history
+                - img [ref=e131]
+                - generic [ref=e136]: History
+            - listitem [ref=e137]:
+              - link "Penalties" [ref=e138] [cursor=pointer]:
+                - /url: /penalties/manage
+                - img [ref=e139]
+                - generic [ref=e142]: Penalties
+        - generic [ref=e143]:
+          - button "PEOPLE" [expanded] [ref=e144]:
+            - generic [ref=e145]: PEOPLE
+            - img [ref=e146]
+          - list [ref=e149]:
+            - listitem [ref=e150]:
+              - link "Members" [ref=e151] [cursor=pointer]:
+                - /url: /members
+                - img [ref=e152]
+                - generic [ref=e157]: Members
+            - listitem [ref=e158]:
+              - link "Membership Requests" [ref=e159] [cursor=pointer]:
+                - /url: /membership-requests
+                - img [ref=e160]
+                - generic [ref=e165]: Membership Requests
+            - listitem [ref=e166]:
+              - link "Staff" [ref=e167] [cursor=pointer]:
+                - /url: /staff
+                - img [ref=e168]
+                - generic [ref=e173]: Staff
+      - list [ref=e175]:
+        - listitem [ref=e176]:
+          - button "LA Library Admin" [ref=e177]:
+            - generic [ref=e179]: LA
+            - generic [ref=e181]: Library Admin
+            - img [ref=e182]
+    - main [ref=e185]:
+      - generic [ref=e187]:
+        - generic [ref=e188]:
+          - button "Toggle Sidebar" [ref=e189]:
+            - img
+            - generic [ref=e190]: Toggle Sidebar
+          - navigation "breadcrumb" [ref=e191]:
+            - list [ref=e192]:
+              - listitem [ref=e193]:
+                - link "Dashboard" [disabled] [ref=e194]
+        - generic [ref=e195]:
+          - button "Notifications" [ref=e196]:
+            - img [ref=e197]
+          - button "User account control pending requests" [ref=e200]:
+            - img [ref=e201]
+          - button "Toggle theme" [ref=e205]:
+            - img
+            - generic [ref=e206]: Toggle theme
+      - generic [ref=e207]:
+        - generic [ref=e208]:
+          - heading "Dashboard" [level=1] [ref=e210]
+          - link "Add Book" [ref=e211] [cursor=pointer]:
+            - /url: /books
+            - img [ref=e212]
+            - text: Add Book
+        - generic [ref=e216]:
+          - article [ref=e217]:
+            - generic [ref=e218]:
+              - img [ref=e220]
+              - generic [ref=e224]:
+                - img [ref=e225]
+                - text: +0.0%
+            - paragraph [ref=e228]: "0"
+            - paragraph [ref=e229]: Books In Catalog
+          - article [ref=e230]:
+            - generic [ref=e231]:
+              - img [ref=e233]
+              - generic [ref=e236]:
+                - img [ref=e237]
+                - text: +100.0%
+            - paragraph [ref=e240]: "1"
+            - paragraph [ref=e241]: Active Members
+          - article [ref=e242]:
+            - generic [ref=e243]:
+              - img [ref=e245]
+              - generic [ref=e248]:
+                - img [ref=e249]
+                - text: +0.0%
+            - paragraph [ref=e252]: "0"
+            - paragraph [ref=e253]: Borrowed Today
+          - article [ref=e254]:
+            - generic [ref=e255]:
+              - img [ref=e257]
+              - generic [ref=e261]:
+                - img [ref=e262]
+                - text: +0.0%
+            - paragraph [ref=e265]: "0"
+            - paragraph [ref=e266]: Overdue Returns
+        - generic [ref=e267]:
+          - generic [ref=e268]:
+            - generic [ref=e269]:
+              - generic [ref=e270]:
+                - heading "Recent Activity" [level=2] [ref=e271]
+                - paragraph [ref=e272]: Live updates across circulation and members.
+              - link "View Logs" [ref=e273] [cursor=pointer]:
+                - /url: /reports
+            - generic [ref=e275]:
+              - img [ref=e277]
+              - generic [ref=e280]:
+                - paragraph [ref=e281]: New member registration
+                - paragraph [ref=e282]: Test User - 4 minutes ago
+          - generic [ref=e283]:
+            - heading "Quick Actions" [level=2] [ref=e284]
+            - paragraph [ref=e285]: Fast links for daily staff workflows.
+            - generic [ref=e286]:
+              - link "Issue a Book" [ref=e287] [cursor=pointer]:
+                - /url: /book-copies
+                - text: Issue a Book
+                - img [ref=e288]
+              - link "Register Member" [ref=e291] [cursor=pointer]:
+                - /url: /members
+                - text: Register Member
+                - img [ref=e292]
+              - link "Manage Returns" [ref=e295] [cursor=pointer]:
+                - /url: /book-copies
+                - text: Manage Returns
+                - img [ref=e296]
+              - link "Inventory Audit" [ref=e299] [cursor=pointer]:
+                - /url: /books
+                - text: Inventory Audit
+                - img [ref=e300]
+  - generic [ref=e304]:
+    - img [ref=e305]
+    - paragraph [ref=e308]: Welcome back. You are now signed in.
+    - button "Dismiss notification" [ref=e309]:
+      - img [ref=e310]
+```

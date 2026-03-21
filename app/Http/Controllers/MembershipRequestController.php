@@ -47,7 +47,7 @@ class MembershipRequestController extends Controller
         $recentlyReviewed = MembershipRequest::query()
             ->where('status', 'reviewed')
             ->latest('resolved_at')
-            ->take(10)
+            ->take(50)
             ->get()
             ->map(fn (MembershipRequest $item) => $this->serializeRequest($item))
             ->values();
@@ -78,13 +78,12 @@ class MembershipRequestController extends Controller
 
         if ($membershipRequest->status !== 'pending') {
             return back()->withErrors([
-                'review_notes' => 'This membership request has already been processed.',
+                'member_password' => 'This membership request has already been processed.',
             ]);
         }
 
         $validated = $request->validate([
             'member_password' => ['required', 'string', 'min:8', 'max:64'],
-            'review_notes' => ['nullable', 'string', 'max:700'],
         ]);
 
         try {
@@ -96,21 +95,23 @@ class MembershipRequestController extends Controller
 
                 if ($lockedRequest->status !== 'pending') {
                     throw ValidationException::withMessages([
-                        'review_notes' => 'This membership request has already been processed.',
+                        'member_password' => 'This membership request has already been processed.',
                     ]);
                 }
 
-                $existing = User::query()->where('email', $lockedRequest->email)->first();
+                $normalizedEmail = strtolower((string) $lockedRequest->email);
+
+                $existing = User::query()->whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
 
                 if ($existing) {
                     throw ValidationException::withMessages([
-                        'review_notes' => 'An account with this email already exists.',
+                        'member_password' => 'An account with this email already exists.',
                     ]);
                 }
 
                 User::query()->create([
                     'name' => $lockedRequest->name,
-                    'email' => $lockedRequest->email,
+                    'email' => $normalizedEmail,
                     'role' => 'member',
                     'contact_number' => $lockedRequest->contact_number,
                     'region_name' => $lockedRequest->region_name,
@@ -119,11 +120,12 @@ class MembershipRequestController extends Controller
                     'barangay_name' => $lockedRequest->barangay_name,
                     'street_address' => $lockedRequest->street_address,
                     'password' => Hash::make($validated['member_password']),
+                    'must_change_password' => true,
                     'email_verified_at' => now(),
                 ]);
 
                 $mailService->sendMemberWelcomeCredentials(
-                    $lockedRequest->email,
+                    $normalizedEmail,
                     $lockedRequest->name,
                     $validated['member_password'],
                 );
@@ -131,7 +133,7 @@ class MembershipRequestController extends Controller
                 $lockedRequest->forceFill([
                     'status' => 'reviewed',
                     'review_outcome' => 'approved',
-                    'review_notes' => $validated['review_notes'] ?? null,
+                    'review_notes' => null,
                     'reviewed_by_user_id' => $request->user()?->id,
                     'email_delivery_status' => 'sent',
                     'email_delivery_message' => null,
@@ -164,7 +166,7 @@ class MembershipRequestController extends Controller
             ])->save();
 
             return back()->withErrors([
-                'review_notes' => 'Membership request was not approved because welcome email could not be sent: '.$exception->getMessage(),
+                'member_password' => 'Membership request was not approved because welcome email could not be sent: '.$exception->getMessage(),
             ]);
         }
     }
@@ -233,18 +235,14 @@ class MembershipRequestController extends Controller
 
         if ($membershipRequest->status !== 'pending') {
             return back()->withErrors([
-                'review_notes' => 'This membership request has already been processed.',
+                'member_password' => 'This membership request has already been processed.',
             ]);
         }
-
-        $validated = $request->validate([
-            'review_notes' => ['required', 'string', 'max:700'],
-        ]);
 
         $membershipRequest->forceFill([
             'status' => 'reviewed',
             'review_outcome' => 'rejected',
-            'review_notes' => $validated['review_notes'],
+            'review_notes' => null,
             'reviewed_by_user_id' => $request->user()?->id,
             'email_delivery_status' => null,
             'email_delivery_message' => null,

@@ -1,0 +1,78 @@
+# Page snapshot
+
+```yaml
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "Libraria" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Libraria
+          - paragraph [ref=e12]: MANAGEMENT SYSTEM
+      - generic [ref=e14]:
+        - heading "Your library, always open." [level=1] [ref=e15]:
+          - text: Your library,
+          - generic [ref=e16]: always open.
+        - paragraph [ref=e17]: Access thousands of books, manage loans, and discover your next best read from one platform.
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - paragraph [ref=e21]: "0"
+          - paragraph [ref=e22]: BOOKS
+        - generic [ref=e23]:
+          - paragraph [ref=e24]: "1"
+          - paragraph [ref=e25]: MEMBERS
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: "0"
+          - paragraph [ref=e28]: ON LOAN
+    - generic [ref=e65]:
+      - button "Toggle theme" [ref=e67]:
+        - img
+        - generic [ref=e68]: Toggle theme
+      - generic [ref=e69]:
+        - paragraph [ref=e70]: LIBRARY PORTAL
+        - heading "Welcome back" [level=2] [ref=e71]
+        - paragraph [ref=e72]: Sign in to your Libraria account
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - button "Member" [ref=e75]:
+            - img [ref=e77]
+            - text: Member
+          - button "Staff" [ref=e80]:
+            - img [ref=e82]
+            - text: Staff
+          - button "Admin" [ref=e86]:
+            - img [ref=e88]
+            - text: Admin
+        - paragraph [ref=e91]: SIGNING IN AS admin
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - generic [ref=e94]: EMAIL ADDRESS
+          - generic [ref=e95]:
+            - textbox "EMAIL ADDRESS" [ref=e96]:
+              - /placeholder: admin@library.ph
+              - text: admin@library.ph
+            - img [ref=e97]
+        - generic [ref=e100]:
+          - generic [ref=e101]: PASSWORD
+          - textbox "PASSWORD" [ref=e103]:
+            - /placeholder: Enter your password
+            - text: Admin@12345
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - checkbox "Remember me" [ref=e106]
+            - text: Remember me
+          - link "Forgot password?" [ref=e107] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/forgot-password
+        - button "Sign in" [disabled] [ref=e108]:
+          - img [ref=e109]
+          - text: Sign in
+      - generic [ref=e111]:
+        - text: Don't have an account?
+        - link "Request membership" [ref=e112] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register
+      - generic [ref=e113]:
+        - text: Butuan City Public Library
+        - button "Help" [ref=e114]:
+          - img [ref=e115]
+          - text: Help
+```

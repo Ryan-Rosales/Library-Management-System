@@ -42,7 +42,6 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return array_merge(parent::share($request), [
-            ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
@@ -67,6 +66,7 @@ class HandleInertiaRequests extends Middleware
                 'membershipRequests' => [],
                 'activityNotifications' => [],
                 'memberNotifications' => [],
+                'passwordPendingCount' => 0,
                 'membershipPendingCount' => 0,
                 'unreadCount' => 0,
             ];
@@ -95,6 +95,7 @@ class HandleInertiaRequests extends Middleware
                 'membershipRequests' => [],
                 'activityNotifications' => [],
                 'memberNotifications' => $memberNotifications,
+                'passwordPendingCount' => 0,
                 'membershipPendingCount' => 0,
                 'unreadCount' => (clone $memberBaseQuery)->whereNull('seen_at')->count(),
             ];
@@ -106,6 +107,7 @@ class HandleInertiaRequests extends Middleware
                 'membershipRequests' => [],
                 'activityNotifications' => [],
                 'memberNotifications' => [],
+                'passwordPendingCount' => 0,
                 'membershipPendingCount' => 0,
                 'unreadCount' => 0,
             ];
@@ -139,6 +141,7 @@ class HandleInertiaRequests extends Middleware
             ->values();
 
         $unreadCount = (clone $baseQuery)->whereNull('seen_at')->count();
+        $passwordPendingCount = (clone $baseQuery)->count();
 
         $activityBaseQuery = MemberNotification::query()
             ->where('user_id', $user->id)
@@ -213,6 +216,7 @@ class HandleInertiaRequests extends Middleware
             'membershipRequests' => $membershipRequests,
             'activityNotifications' => $activityNotifications,
             'memberNotifications' => [],
+            'passwordPendingCount' => $passwordPendingCount,
             'membershipPendingCount' => $membershipPendingCount,
             'unreadCount' => $unreadCount + $membershipUnreadCount + $activityUnreadCount,
         ];

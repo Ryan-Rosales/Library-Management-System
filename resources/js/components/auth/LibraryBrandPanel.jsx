@@ -1,5 +1,3 @@
-import { BookOpenText } from 'lucide-react';
-
 const shelfPalette = [
     '#39a16f',
     '#2f9657',
@@ -34,8 +32,8 @@ export default function LibraryBrandPanel({ loginStats }) {
             <div className="pointer-events-none absolute left-0 top-0 h-full w-full bg-[linear-gradient(120deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_42%)]" />
 
             <div className="auth-brand-strip page-enter-item relative z-10 flex items-center gap-4 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 backdrop-blur-md">
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#1f7a4f] shadow-lg shadow-[#1f7a4f]/45">
-                    <BookOpenText size={22} />
+                <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl bg-[#1f7a4f] shadow-lg shadow-[#1f7a4f]/45">
+                    <img src="/images/Libraria.png" alt="Libraria" className="h-full w-full object-cover" />
                 </div>
                 <div>
                     <p className="text-2xl font-semibold tracking-tight text-white">Libraria</p>

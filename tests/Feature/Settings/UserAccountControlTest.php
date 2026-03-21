@@ -4,7 +4,9 @@ namespace Tests\Feature\Settings;
 
 use App\Models\PasswordChangeRequest;
 use App\Models\User;
+use App\Services\TransactionalMailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 class UserAccountControlTest extends TestCase
@@ -83,6 +85,8 @@ class UserAccountControlTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $member = User::factory()->create(['role' => 'member']);
 
+        $this->mockResetNoticeMail();
+
         $request = PasswordChangeRequest::create([
             'requester_user_id' => $member->id,
             'requester_name' => $member->name,
@@ -90,6 +94,8 @@ class UserAccountControlTest extends TestCase
             'requester_role' => 'member',
             'target_role' => 'admin',
             'status' => 'pending',
+            'verified_by_user_id' => $admin->id,
+            'verified_at' => now(),
         ]);
 
         $response = $this->actingAs($admin)->put(
@@ -105,6 +111,8 @@ class UserAccountControlTest extends TestCase
         $this->assertDatabaseHas('password_change_requests', [
             'id' => $request->id,
             'status' => 'reviewed',
+            'review_action' => 'approved',
+            'processed_by_user_id' => $admin->id,
         ]);
     }
 
@@ -113,6 +121,8 @@ class UserAccountControlTest extends TestCase
         $staff = User::factory()->create(['role' => 'staff']);
         $member = User::factory()->create(['role' => 'member']);
 
+        $this->mockResetNoticeMail();
+
         $request = PasswordChangeRequest::create([
             'requester_user_id' => $member->id,
             'requester_name' => $member->name,
@@ -120,6 +130,8 @@ class UserAccountControlTest extends TestCase
             'requester_role' => 'member',
             'target_role' => 'staff',
             'status' => 'pending',
+            'verified_by_user_id' => $staff->id,
+            'verified_at' => now(),
         ]);
 
         $response = $this->actingAs($staff)->put(
@@ -135,6 +147,8 @@ class UserAccountControlTest extends TestCase
         $this->assertDatabaseHas('password_change_requests', [
             'id' => $request->id,
             'status' => 'reviewed',
+            'review_action' => 'approved',
+            'processed_by_user_id' => $staff->id,
         ]);
     }
 
@@ -143,6 +157,8 @@ class UserAccountControlTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $staff = User::factory()->create(['role' => 'staff']);
 
+        $this->mockResetNoticeMail();
+
         $request = PasswordChangeRequest::create([
             'requester_user_id' => $staff->id,
             'requester_name' => $staff->name,
@@ -150,6 +166,8 @@ class UserAccountControlTest extends TestCase
             'requester_role' => 'staff',
             'target_role' => 'admin',
             'status' => 'pending',
+            'verified_by_user_id' => $admin->id,
+            'verified_at' => now(),
         ]);
 
         $response = $this->actingAs($admin)->put(
@@ -165,6 +183,8 @@ class UserAccountControlTest extends TestCase
         $this->assertDatabaseHas('password_change_requests', [
             'id' => $request->id,
             'status' => 'reviewed',
+            'review_action' => 'approved',
+            'processed_by_user_id' => $admin->id,
         ]);
     }
 
@@ -192,6 +212,56 @@ class UserAccountControlTest extends TestCase
         );
 
         $response->assertSessionHasErrors();
+    }
+
+    public function test_admin_can_reject_member_password_change_request(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $member = User::factory()->create(['role' => 'member']);
+
+        $this->mockResetRejectedMail();
+
+        $request = PasswordChangeRequest::create([
+            'requester_user_id' => $member->id,
+            'requester_name' => $member->name,
+            'requester_email' => $member->email,
+            'requester_role' => 'member',
+            'target_role' => 'admin',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->post(
+            route('settings.user-account-control.password.reject', $member),
+            [
+                'request_id' => $request->id,
+            ]
+        );
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('password_change_requests', [
+            'id' => $request->id,
+            'status' => 'reviewed',
+            'review_action' => 'rejected',
+            'processed_by_user_id' => $admin->id,
+        ]);
+    }
+
+    public function test_admin_can_view_password_reset_audit_page(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->get(route('settings.password-reset-audit'));
+
+        $response->assertOk();
+    }
+
+    public function test_staff_cannot_view_password_reset_audit_page(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+
+        $response = $this->actingAs($staff)->get(route('settings.password-reset-audit'));
+
+        $response->assertForbidden();
     }
 
     public function test_admin_can_update_email(): void
@@ -276,5 +346,21 @@ class UserAccountControlTest extends TestCase
         $response = $this->actingAs($admin)->get(route('settings.user-account-control'));
 
         $response->assertOk();
+    }
+
+    private function mockResetNoticeMail(): void
+    {
+        $mailService = Mockery::mock(TransactionalMailService::class);
+        $mailService->shouldReceive('sendPasswordResetChangedNotice')->once();
+
+        $this->app->instance(TransactionalMailService::class, $mailService);
+    }
+
+    private function mockResetRejectedMail(): void
+    {
+        $mailService = Mockery::mock(TransactionalMailService::class);
+        $mailService->shouldReceive('sendPasswordResetRejectedNotice')->once();
+
+        $this->app->instance(TransactionalMailService::class, $mailService);
     }
 }

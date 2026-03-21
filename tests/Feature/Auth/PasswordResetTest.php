@@ -4,7 +4,9 @@ namespace Tests\Feature\Auth;
 
 use App\Models\PasswordChangeRequest;
 use App\Models\User;
+use App\Services\TransactionalMailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
@@ -23,6 +25,8 @@ class PasswordResetTest extends TestCase
         $user = User::factory()->create([
             'role' => 'member',
         ]);
+
+        $this->mockVerificationMail();
 
         $response = $this->post('/forgot-password', [
             'email' => $user->email,
@@ -59,6 +63,8 @@ class PasswordResetTest extends TestCase
             'role' => 'staff',
         ]);
 
+        $this->mockVerificationMail();
+
         $response = $this->post('/forgot-password', [
             'email' => $user->email,
             'requester_role' => 'staff',
@@ -81,6 +87,8 @@ class PasswordResetTest extends TestCase
             'role' => 'member',
         ]);
 
+        $this->mockVerificationMail();
+
         PasswordChangeRequest::query()->create([
             'requester_user_id' => $user->id,
             'requester_name' => $user->name,
@@ -97,5 +105,13 @@ class PasswordResetTest extends TestCase
 
         $response->assertSessionHas('status');
         $this->assertDatabaseCount('password_change_requests', 1);
+    }
+
+    private function mockVerificationMail(): void
+    {
+        $mailService = Mockery::mock(TransactionalMailService::class);
+        $mailService->shouldReceive('sendPasswordResetVerificationLink')->once();
+
+        $this->app->instance(TransactionalMailService::class, $mailService);
     }
 }

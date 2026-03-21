@@ -29,6 +29,7 @@ class User extends Authenticatable
         'barangay_name',
         'street_address',
         'password',
+        'must_change_password',
         'profile_photo_path',
     ];
 
@@ -56,6 +57,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 

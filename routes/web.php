@@ -28,6 +28,10 @@ Route::get('/', function () {
         : redirect()->route('login');
 })->name('home');
 
+Route::get('notifications/password-change/{passwordChangeRequest}/verify', [PasswordChangeRequestController::class, 'verify'])
+    ->middleware('signed')
+    ->name('password-change-requests.verify');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         if (Auth::user()?->role === 'staff') {

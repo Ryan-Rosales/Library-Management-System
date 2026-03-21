@@ -4,7 +4,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Libraria';
 const pages = import.meta.glob('./pages/**/*.{jsx,tsx}');
 
 createInertiaApp({

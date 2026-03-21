@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface MembershipRequestItem {
     id: number;
@@ -19,7 +19,6 @@ interface MembershipRequestItem {
     street_address: string | null;
     status: 'pending' | 'reviewed';
     review_outcome: 'approved' | 'rejected' | null;
-    review_notes: string | null;
     reviewed_by: {
         id: number;
         name: string;
@@ -56,6 +55,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MembershipRequests({ pendingRequests, recentlyReviewed, selectedRequestId }: MembershipRequestsProps) {
+    const [showHistory, setShowHistory] = useState(false);
+    const [historySearch, setHistorySearch] = useState('');
+    const [historyOutcomeFilter, setHistoryOutcomeFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+    const [historyEmailFilter, setHistoryEmailFilter] = useState<'all' | 'sent' | 'failed'>('all');
+
     const initialSelectedId =
         selectedRequestId && pendingRequests.some((item) => item.id === selectedRequestId)
             ? selectedRequestId
@@ -63,7 +67,6 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
 
     const actionForm = useForm({
         request_id: initialSelectedId,
-        review_notes: '',
         member_password: '',
     });
 
@@ -88,6 +91,26 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
             .join(', ');
     }, [selectedRequest]);
 
+    const filteredReviewed = useMemo(() => {
+        return recentlyReviewed.filter((item) => {
+            const search = historySearch.trim().toLowerCase();
+            const matchesSearch =
+                search.length === 0 ||
+                item.name.toLowerCase().includes(search) ||
+                item.email.toLowerCase().includes(search) ||
+                (item.reviewed_by?.name.toLowerCase().includes(search) ?? false);
+
+            const matchesOutcome = historyOutcomeFilter === 'all' || item.review_outcome === historyOutcomeFilter;
+
+            const matchesEmailStatus =
+                historyEmailFilter === 'all' ||
+                (historyEmailFilter === 'sent' && item.email_delivery_status === 'sent') ||
+                (historyEmailFilter === 'failed' && item.email_delivery_status === 'failed');
+
+            return matchesSearch && matchesOutcome && matchesEmailStatus;
+        });
+    }, [recentlyReviewed, historySearch, historyOutcomeFilter, historyEmailFilter]);
+
     const submitApprove = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -97,7 +120,7 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
 
         actionForm.post(route('membership-requests.approve', selectedRequest.id), {
             preserveScroll: true,
-            onSuccess: () => actionForm.reset('review_notes', 'member_password'),
+            onSuccess: () => actionForm.reset('member_password'),
         });
     };
 
@@ -108,7 +131,7 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
 
         actionForm.post(route('membership-requests.reject', selectedRequest.id), {
             preserveScroll: true,
-            onSuccess: () => actionForm.reset('review_notes', 'member_password'),
+            onSuccess: () => actionForm.reset('member_password'),
         });
     };
 
@@ -208,18 +231,6 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
                                             <InputError message={actionForm.errors.member_password} />
                                         </div>
 
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="review_notes">Review notes (optional for approve, required for reject)</Label>
-                                            <textarea
-                                                id="review_notes"
-                                                value={actionForm.data.review_notes}
-                                                onChange={(event) => actionForm.setData('review_notes', event.target.value)}
-                                                className="min-h-28 w-full rounded-xl border border-[#d0dfd8] bg-white px-3 py-2 text-sm dark:border-white/18 dark:bg-white/8"
-                                                placeholder="Add context for the decision"
-                                            />
-                                            <InputError message={actionForm.errors.review_notes} />
-                                        </div>
-
                                         <div className="flex flex-wrap gap-2">
                                             <Button disabled={actionForm.processing}>Approve and create member</Button>
                                             <Button type="button" variant="destructive" onClick={submitReject} disabled={actionForm.processing}>
@@ -240,80 +251,132 @@ export default function MembershipRequests({ pendingRequests, recentlyReviewed, 
                         </div>
 
                         <section className="rounded-2xl border border-[#d5e7df] bg-white/80 p-4 dark:border-white/12 dark:bg-white/6">
-                            <h3 className="mb-3 text-sm font-semibold text-[#2a5849] dark:text-[#bfe7d7]">Recently reviewed</h3>
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                                <h3 className="text-sm font-semibold text-[#2a5849] dark:text-[#bfe7d7]">Recently reviewed</h3>
+                                <Button type="button" variant="outline" onClick={() => setShowHistory((current) => !current)}>
+                                    {showHistory ? 'Hide history' : `Show history (${recentlyReviewed.length})`}
+                                </Button>
+                            </div>
 
-                            {recentlyReviewed.length === 0 ? (
-                                <p className="text-xs text-[#64786f] dark:text-[#9ab2a8]">No reviewed requests yet.</p>
-                            ) : (
-                                <div className="grid gap-2 md:grid-cols-2">
-                                    {recentlyReviewed.map((item) => (
-                                        <div key={item.id} className="rounded-xl border border-[#d4e5dc] bg-[#f8fcfa] px-3 py-2 text-xs dark:border-white/15 dark:bg-white/6">
-                                            <div className="mb-1 flex items-center justify-between gap-2">
-                                                <p className="font-semibold text-[#2f5d4d] dark:text-[#bfe7d7]">{item.name}</p>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span
-                                                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                                                            item.review_outcome === 'approved'
-                                                                ? 'bg-[#e6f7ef] text-[#226a4a] dark:bg-[#1a3c2f] dark:text-[#b2ead1]'
-                                                                : 'bg-[#fdeaea] text-[#8a3030] dark:bg-[#442020] dark:text-[#ffb4b4]'
-                                                        }`}
-                                                    >
-                                                        {item.review_outcome}
-                                                    </span>
-                                                    {item.review_outcome === 'approved' && (
-                                                        <span
-                                                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${
-                                                                item.email_delivery_status === 'sent'
-                                                                    ? 'bg-[#e7f6ea] text-[#1f6a43] dark:bg-[#173824] dark:text-[#afe6c6]'
-                                                                    : 'bg-[#fdeaea] text-[#8a3030] dark:bg-[#442020] dark:text-[#ffb4b4]'
-                                                            }`}
-                                                        >
-                                                            {item.email_delivery_status === 'sent' ? 'Email sent' : 'Email failed'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <p className="text-[#5e766b] dark:text-[#9cb9ae]">{item.email}</p>
-                                            {item.reviewed_by && (
-                                                <div className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#edf6f1] px-2 py-1.5 dark:bg-[#1a3c2f]">
-                                                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${item.reviewed_by.role === 'admin' ? 'bg-[#e8924f]' : 'bg-[#4fa8d1]'}`}></span>
-                                                    <span className={`text-[10px] font-semibold uppercase tracking-wide ${item.reviewed_by.role === 'admin' ? 'text-[#8a5a20] dark:text-[#f0c68d]' : 'text-[#1e4a6b] dark:text-[#a6d9f5]'}`}>
-                                                        {item.reviewed_by.role === 'admin' ? 'Admin' : 'Staff'}:
-                                                    </span>
-                                                    <span className="text-[#2f5d4d] dark:text-[#bfe7d7]">{item.reviewed_by.name}</span>
-                                                </div>
-                                            )}
-                                            {item.review_notes && <p className="mt-1 text-[#4f665d] dark:text-[#b5d5c8]">Notes: {item.review_notes}</p>}
-                                            {item.review_outcome === 'approved' && item.email_delivery_status === 'failed' && item.email_delivery_message && (
-                                                <p className="mt-1 text-[#8a3030] dark:text-[#ffb4b4]">Mail error: {item.email_delivery_message}</p>
-                                            )}
-                                            {item.review_outcome === 'approved' && (
-                                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                    <Link
-                                                        href={getFallbackMembersShortcut(item)}
-                                                        className="inline-flex items-center rounded-lg border border-[#c5dace] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#2f6b53] transition hover:bg-[#f3faf7] dark:border-white/20 dark:bg-white/8 dark:text-[#bfe8d6] dark:hover:bg-white/12"
-                                                    >
-                                                        Open prefilled Members form
-                                                    </Link>
-                                                    {item.email_delivery_status === 'failed' && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                router.post(route('membership-requests.retry-email', item.id), {}, {
-                                                                    preserveScroll: true,
-                                                                })
-                                                            }
-                                                            className="inline-flex items-center rounded-lg border border-[#e2c38f] bg-[#fff8eb] px-2.5 py-1.5 text-[11px] font-semibold text-[#8a5a20] transition hover:bg-[#fff2d8] dark:border-[#6a4b22] dark:bg-[#2f2415] dark:text-[#f0c68d] dark:hover:bg-[#3a2d1b]"
-                                                        >
-                                                            Retry Email
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
+                            {showHistory &&
+                                (recentlyReviewed.length === 0 ? (
+                                    <p className="text-xs text-[#64786f] dark:text-[#9ab2a8]">No reviewed requests yet.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <div className="grid gap-2 md:grid-cols-3">
+                                            <input
+                                                type="text"
+                                                value={historySearch}
+                                                onChange={(event) => setHistorySearch(event.target.value)}
+                                                placeholder="Search name, email, reviewer"
+                                                className="h-10 rounded-xl border border-[#d0dfd8] bg-white px-3 text-sm dark:border-white/18 dark:bg-white/8"
+                                            />
+                                            <select
+                                                value={historyOutcomeFilter}
+                                                onChange={(event) => setHistoryOutcomeFilter(event.target.value as 'all' | 'approved' | 'rejected')}
+                                                className="h-10 rounded-xl border border-[#d0dfd8] bg-white px-3 text-sm dark:border-white/18 dark:bg-white/8"
+                                            >
+                                                <option value="all">All outcomes</option>
+                                                <option value="approved">Approved only</option>
+                                                <option value="rejected">Rejected only</option>
+                                            </select>
+                                            <select
+                                                value={historyEmailFilter}
+                                                onChange={(event) => setHistoryEmailFilter(event.target.value as 'all' | 'sent' | 'failed')}
+                                                className="h-10 rounded-xl border border-[#d0dfd8] bg-white px-3 text-sm dark:border-white/18 dark:bg-white/8"
+                                            >
+                                                <option value="all">All email statuses</option>
+                                                <option value="sent">Email sent</option>
+                                                <option value="failed">Email failed</option>
+                                            </select>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+
+                                        {filteredReviewed.length === 0 ? (
+                                            <p className="text-xs text-[#64786f] dark:text-[#9ab2a8]">No records match your filters.</p>
+                                        ) : (
+                                            <div className="overflow-x-auto rounded-xl border border-[#d4e5dc] dark:border-white/15">
+                                                <table className="min-w-full divide-y divide-[#d4e5dc] text-xs dark:divide-white/15">
+                                                    <thead className="bg-[#f1faf5] dark:bg-white/8">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Name</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Email</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Outcome</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Email status</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Reviewed by</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Resolved</th>
+                                                            <th className="px-3 py-2 text-left font-semibold text-[#365e50] dark:text-[#bfe7d7]">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-[#d4e5dc] bg-white/70 dark:divide-white/10 dark:bg-white/6">
+                                                        {filteredReviewed.map((item) => (
+                                                            <tr key={item.id}>
+                                                                <td className="px-3 py-2 text-[#2f5d4d] dark:text-[#bfe7d7]">{item.name}</td>
+                                                                <td className="px-3 py-2 text-[#5e766b] dark:text-[#9cb9ae]">{item.email}</td>
+                                                                <td className="px-3 py-2">
+                                                                    <span
+                                                                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                                                                            item.review_outcome === 'approved'
+                                                                                ? 'bg-[#e6f7ef] text-[#226a4a] dark:bg-[#1a3c2f] dark:text-[#b2ead1]'
+                                                                                : 'bg-[#fdeaea] text-[#8a3030] dark:bg-[#442020] dark:text-[#ffb4b4]'
+                                                                        }`}
+                                                                    >
+                                                                        {item.review_outcome}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-2">
+                                                                    {item.review_outcome === 'approved' ? (
+                                                                        <span
+                                                                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${
+                                                                                item.email_delivery_status === 'sent'
+                                                                                    ? 'bg-[#e7f6ea] text-[#1f6a43] dark:bg-[#173824] dark:text-[#afe6c6]'
+                                                                                    : 'bg-[#fdeaea] text-[#8a3030] dark:bg-[#442020] dark:text-[#ffb4b4]'
+                                                                            }`}
+                                                                        >
+                                                                            {item.email_delivery_status === 'sent' ? 'Email sent' : 'Email failed'}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-[#5e766b] dark:text-[#9cb9ae]">N/A</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-[#5e766b] dark:text-[#9cb9ae]">
+                                                                    {item.reviewed_by ? `${item.reviewed_by.name} (${item.reviewed_by.role})` : '-'}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-[#5e766b] dark:text-[#9cb9ae]">{item.resolved_at || '-'}</td>
+                                                                <td className="px-3 py-2">
+                                                                    {item.review_outcome === 'approved' ? (
+                                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                                            <Link
+                                                                                href={getFallbackMembersShortcut(item)}
+                                                                                className="inline-flex items-center rounded-lg border border-[#c5dace] bg-white px-2 py-1 text-[10px] font-semibold text-[#2f6b53] transition hover:bg-[#f3faf7] dark:border-white/20 dark:bg-white/8 dark:text-[#bfe8d6] dark:hover:bg-white/12"
+                                                                            >
+                                                                                Open prefilled form
+                                                                            </Link>
+                                                                            {item.email_delivery_status === 'failed' && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        router.post(route('membership-requests.retry-email', item.id), {}, {
+                                                                                            preserveScroll: true,
+                                                                                        })
+                                                                                    }
+                                                                                    className="inline-flex items-center rounded-lg border border-[#e2c38f] bg-[#fff8eb] px-2 py-1 text-[10px] font-semibold text-[#8a5a20] transition hover:bg-[#fff2d8] dark:border-[#6a4b22] dark:bg-[#2f2415] dark:text-[#f0c68d] dark:hover:bg-[#3a2d1b]"
+                                                                                >
+                                                                                    Retry Email
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-[#5e766b] dark:text-[#9cb9ae]">-</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                         </section>
                     </div>
                 </div>

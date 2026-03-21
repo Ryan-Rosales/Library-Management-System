@@ -36,6 +36,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                       url: '/settings/user-account-control',
                       icon: null,
                   },
+                  ...(role === 'admin'
+                      ? [
+                            {
+                                title: 'Password reset audit',
+                                url: '/settings/password-reset-audit',
+                                icon: null,
+                            },
+                        ]
+                      : []),
               ]
             : sidebarNavItems;
 

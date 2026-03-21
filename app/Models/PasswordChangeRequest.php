@@ -18,6 +18,10 @@ class PasswordChangeRequest extends Model
         'target_role',
         'reason',
         'status',
+        'verified_by_user_id',
+        'verified_at',
+        'processed_by_user_id',
+        'review_action',
         'seen_at',
         'resolved_at',
     ];
@@ -25,6 +29,7 @@ class PasswordChangeRequest extends Model
     protected function casts(): array
     {
         return [
+            'verified_at' => 'datetime',
             'seen_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];
@@ -33,5 +38,10 @@ class PasswordChangeRequest extends Model
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requester_user_id');
+    }
+
+    public function processedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'processed_by_user_id');
     }
 }

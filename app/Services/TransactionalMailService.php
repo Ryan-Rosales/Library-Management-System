@@ -3,12 +3,15 @@
 namespace App\Services;
 
 use App\Mail\MemberWelcomeCredentialsMail;
+use App\Mail\PasswordResetChangedNoticeMail;
+use App\Mail\PasswordResetRejectedNoticeMail;
+use App\Mail\PasswordResetVerificationLinkMail;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 
 class TransactionalMailService
 {
-    public function sendMemberWelcomeCredentials(string $recipientEmail, string $recipientName, string $generatedPassword): void
+    private function ensureConfiguredMailer(): void
     {
         $defaultMailer = (string) config('mail.default');
 
@@ -27,12 +30,77 @@ class TransactionalMailService
                 throw new RuntimeException('SMTP is pointing to a local mail trap ('.$smtpHost.'). Use real SMTP credentials to deliver to Gmail inboxes.');
             }
         }
+    }
 
-        Mail::to($recipientEmail)->send(
+    public function sendMemberWelcomeCredentials(string $recipientEmail, string $recipientName, string $generatedPassword): void
+    {
+        $this->ensureConfiguredMailer();
+
+        Mail::to($recipientEmail)->queue(
             new MemberWelcomeCredentialsMail(
                 recipientName: $recipientName,
                 recipientEmail: $recipientEmail,
                 generatedPassword: $generatedPassword,
+            )
+        );
+    }
+
+    public function sendPasswordResetVerificationLink(
+        string $recipientEmail,
+        string $recipientName,
+        string $requesterName,
+        string $requesterEmail,
+        string $requesterRole,
+        string $verificationUrl,
+    ): void {
+        $this->ensureConfiguredMailer();
+
+        Mail::to($recipientEmail)->queue(
+            new PasswordResetVerificationLinkMail(
+                recipientName: $recipientName,
+                requesterName: $requesterName,
+                requesterEmail: $requesterEmail,
+                requesterRole: $requesterRole,
+                verificationUrl: $verificationUrl,
+            )
+        );
+    }
+
+    public function sendPasswordResetChangedNotice(
+        string $recipientEmail,
+        string $recipientName,
+        string $newPassword,
+        string $changedByName,
+        string $changedByRole,
+    ): void {
+        $this->ensureConfiguredMailer();
+
+        Mail::to($recipientEmail)->queue(
+            new PasswordResetChangedNoticeMail(
+                recipientName: $recipientName,
+                recipientEmail: $recipientEmail,
+                newPassword: $newPassword,
+                changedByName: $changedByName,
+                changedByRole: $changedByRole,
+            )
+        );
+    }
+
+    public function sendPasswordResetRejectedNotice(
+        string $recipientEmail,
+        string $recipientName,
+        string $requesterRole,
+        string $rejectedByName,
+        string $rejectedByRole,
+    ): void {
+        $this->ensureConfiguredMailer();
+
+        Mail::to($recipientEmail)->queue(
+            new PasswordResetRejectedNoticeMail(
+                recipientName: $recipientName,
+                requesterRole: $requesterRole,
+                rejectedByName: $rejectedByName,
+                rejectedByRole: $rejectedByRole,
             )
         );
     }

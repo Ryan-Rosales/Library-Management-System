@@ -4,17 +4,25 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType, type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { Bell } from 'lucide-react';
+import { Bell, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const page = usePage<SharedData>();
-    const notifications = page.props.notifications || { passwordChangeRequests: [], membershipRequests: [], activityNotifications: [], memberNotifications: [], unreadCount: 0 };
+    const notifications = page.props.notifications || {
+        passwordChangeRequests: [],
+        membershipRequests: [],
+        activityNotifications: [],
+        memberNotifications: [],
+        passwordPendingCount: 0,
+        unreadCount: 0,
+    };
     const role = page.props.auth?.user?.role;
     const isAdmin = role === 'admin';
     const isStaff = role === 'staff';
     const isMember = role === 'member';
     const canViewPasswordRequests = role === 'admin' || role === 'staff';
+    const pendingPasswordCount = notifications.passwordPendingCount ?? notifications.passwordChangeRequests.length;
     const [isOpen, setIsOpen] = useState(false);
 
     const openPasswordRequest = (requestId: number) => {
@@ -55,6 +63,17 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
         });
     };
 
+    const openUserAccountControl = () => {
+        const firstPendingRequest = notifications.passwordChangeRequests[0];
+
+        if (firstPendingRequest) {
+            router.visit(route('settings.user-account-control', { request: firstPendingRequest.id }));
+            return;
+        }
+
+        router.visit(route('settings.user-account-control'));
+    };
+
     return (
         <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b border-white/60 bg-white/65 px-6 backdrop-blur-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 dark:border-white/10 dark:bg-white/5 md:px-4">
             <div className="flex w-full items-center justify-between gap-3">
@@ -68,11 +87,11 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             <button
                                 type="button"
                                 aria-label="Notifications"
-                                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/65 bg-white/80 text-[#3f5f53] shadow-[0_10px_24px_rgba(38,74,61,0.14)] transition hover:bg-white dark:border-white/20 dark:bg-white/10 dark:text-[#cae7db] dark:hover:bg-white/15"
+                                className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/65 bg-white/80 text-[#3f5f53] shadow-[0_10px_24px_rgba(38,74,61,0.14)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white hover:shadow-[0_12px_26px_rgba(38,74,61,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6fc8a1]/65 dark:border-white/20 dark:bg-white/10 dark:text-[#cae7db] dark:hover:bg-white/15 dark:hover:shadow-[0_12px_28px_rgba(3,9,14,0.7)] dark:focus-visible:ring-[#8adfc0]/60"
                             >
                                 <Bell className="h-4 w-4" />
                                 {notifications.unreadCount > 0 && (
-                                    <span className="absolute right-1.5 top-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
+                                    <span className="absolute right-1.5 top-1.5 inline-flex h-2.5 w-2.5 rounded-full border border-white/90 bg-rose-500 dark:border-[#0d1f28]" />
                                 )}
                             </button>
                         </DropdownMenuTrigger>
@@ -235,6 +254,24 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                             })}
                         </DropdownMenuContent>
                     </DropdownMenu>
+
+                    {canViewPasswordRequests && (
+                        <button
+                            type="button"
+                            aria-label="User account control pending requests"
+                            title="Open user account control"
+                            onClick={openUserAccountControl}
+                            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/65 bg-white/80 text-[#3f5f53] shadow-[0_10px_24px_rgba(38,74,61,0.14)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white hover:shadow-[0_12px_26px_rgba(38,74,61,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6fc8a1]/65 dark:border-white/20 dark:bg-white/10 dark:text-[#cae7db] dark:hover:bg-white/15 dark:hover:shadow-[0_12px_28px_rgba(3,9,14,0.7)] dark:focus-visible:ring-[#8adfc0]/60"
+                        >
+                            <KeyRound className="h-4 w-4" />
+                            {pendingPasswordCount > 0 && (
+                                <span className="absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full border border-white/90 bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white shadow-sm dark:border-[#0d1f28]">
+                                    {pendingPasswordCount > 99 ? '99+' : pendingPasswordCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
+
                     <AppearanceToggleDropdown className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/65 bg-white/80 p-0 shadow-[0_10px_24px_rgba(38,74,61,0.14)] backdrop-blur dark:border-white/20 dark:bg-white/10" />
                 </div>
             </div>

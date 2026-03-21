@@ -1,9 +1,19 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Edit3, Plus, Search, Trash2, UsersRound, X } from 'lucide-react';
+import { Edit3, Plus, Search, Trash2, UsersRound, WandSparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const PSGC_BASE = 'https://psgc.gitlab.io/api';
+
+const generateSecurePassword = (length = 12) => {
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    const randomBytes = new Uint32Array(length);
+    window.crypto.getRandomValues(randomBytes);
+
+    return Array.from(randomBytes)
+        .map((value) => charset[value % charset.length])
+        .join('');
+};
 
 const readJson = async (url) => {
     const response = await fetch(url);
@@ -208,6 +218,7 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
               ...initialForm,
               name: prefill?.name || '',
               email: prefill?.email || '',
+              password: generateSecurePassword(),
               contact_number: prefill?.contact_number || '',
               region_code: '',
               region_name: prefill?.region_name || '',
@@ -244,6 +255,9 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
             preserveScroll: true,
             onSuccess: () => {
                 reset(...Object.keys(initialForm));
+                if (isMemberPage) {
+                    setData('password', generateSecurePassword());
+                }
                 setProvinces([]);
                 setCities([]);
                 setBarangays([]);
@@ -277,6 +291,9 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
     const cancelEdit = () => {
         setEditingId(null);
         reset();
+        if (isMemberPage) {
+            setData('password', generateSecurePassword());
+        }
         setProvinces([]);
         setCities([]);
         setBarangays([]);
@@ -354,13 +371,37 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
                             <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">
                                 PASSWORD {editingId ? '(leave blank to keep current)' : ''}
                             </label>
-                            <input
-                                type="password"
-                                value={data.password}
-                                onChange={(event) => setData('password', event.target.value)}
-                                className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
-                                placeholder="Minimum 8 characters"
-                            />
+                            {isMemberPage && !editingId ? (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={data.password}
+                                            readOnly
+                                            className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
+                                            placeholder="Auto-generated member password"
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label="Regenerate member password"
+                                            title="Regenerate member password"
+                                            onClick={() => setData('password', generateSecurePassword())}
+                                            className="inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-[#c7d8d1] bg-white text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/10 dark:text-[#c8e6da]"
+                                        >
+                                            <WandSparkles size={16} />
+                                        </button>
+                                    </div>
+                                    <p className="text-[11px] text-[#5f756d] dark:text-[#9cb2ab]">This generated password will be sent to the member Gmail in the welcome email.</p>
+                                </div>
+                            ) : (
+                                <input
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(event) => setData('password', event.target.value)}
+                                    className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
+                                    placeholder="Minimum 8 characters"
+                                />
+                            )}
                             {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
                         </div>
 

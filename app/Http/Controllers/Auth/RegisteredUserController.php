@@ -42,6 +42,18 @@ class RegisteredUserController extends Controller
             'street_address' => 'nullable|string|max:255',
         ]);
 
+        $data['email'] = strtolower((string) $data['email']);
+
+        $existingUser = User::query()
+            ->whereRaw('LOWER(email) = ?', [$data['email']])
+            ->exists();
+
+        if ($existingUser) {
+            return back()->withErrors([
+                'email' => 'An account with this email already exists.',
+            ])->withInput();
+        }
+
         $alreadyPending = MembershipRequest::query()
             ->where('email', $data['email'])
             ->where('status', 'pending')
