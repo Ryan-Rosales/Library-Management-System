@@ -5,8 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Libraria') }}</title>
-        <link rel="icon" type="image/png" href="/images/Libraria.png">
-        <link rel="apple-touch-icon" href="/images/Libraria.png">
+        <link rel="icon" type="image/png" href="/images/Libraria.png?v=2">
+        <link rel="shortcut icon" href="/images/Libraria.png?v=2">
+        <link rel="apple-touch-icon" href="/images/Libraria.png?v=2">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
