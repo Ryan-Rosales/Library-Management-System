@@ -5,7 +5,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     autoDeploy: true
-    preDeployCommand: php artisan migrate --force
+    preDeployCommand: php artisan config:clear && php artisan cache:clear && php artisan migrate --force
     healthCheckPath: /
     envVars:
       - key: APP_ENV
@@ -17,11 +17,13 @@ services:
       - key: APP_KEY
         sync: false
       - key: DB_CONNECTION
-        value: mysql
+        sync: false
+      - key: DB_URL
+        sync: false
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        value: "3306"
+        sync: false
       - key: DB_DATABASE
         sync: false
       - key: DB_USERNAME
@@ -64,11 +66,13 @@ services:
       - key: APP_KEY
         sync: false
       - key: DB_CONNECTION
-        value: mysql
+        sync: false
+      - key: DB_URL
+        sync: false
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        value: "3306"
+        sync: false
       - key: DB_DATABASE
         sync: false
       - key: DB_USERNAME
