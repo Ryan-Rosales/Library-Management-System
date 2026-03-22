@@ -8,6 +8,7 @@ use App\Services\TransactionalMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -194,6 +195,8 @@ class UserManagementController extends Controller
 
         $createdUser = User::create($payload);
 
+        $emailWarning = null;
+
         if ($role === 'member') {
             try {
                 $this->mailService->sendMemberWelcomeCredentials(
@@ -202,11 +205,13 @@ class UserManagementController extends Controller
                     $plainPassword,
                 );
             } catch (Throwable $exception) {
-                $createdUser->delete();
-
-                return back()->withErrors([
-                    'email' => 'Member account was not created because welcome email could not be sent: '.$exception->getMessage(),
+                Log::warning('Unable to send member welcome email.', [
+                    'user_id' => $createdUser->id,
+                    'recipient_email' => $createdUser->email,
+                    'error' => $exception->getMessage(),
                 ]);
+
+                $emailWarning = 'Member account was created, but welcome email could not be sent. Please share credentials manually and recheck SMTP settings.';
             }
         }
 
@@ -218,11 +223,13 @@ class UserManagementController extends Controller
                     $plainPassword,
                 );
             } catch (Throwable $exception) {
-                $createdUser->delete();
-
-                return back()->withErrors([
-                    'email' => 'Staff account was not created because welcome email could not be sent: '.$exception->getMessage(),
+                Log::warning('Unable to send staff welcome email.', [
+                    'user_id' => $createdUser->id,
+                    'recipient_email' => $createdUser->email,
+                    'error' => $exception->getMessage(),
                 ]);
+
+                $emailWarning = 'Staff account was created, but welcome email could not be sent. Please share credentials manually and recheck SMTP settings.';
             }
         }
 
@@ -238,7 +245,13 @@ class UserManagementController extends Controller
             ? 'Member account created successfully. Login credentials were sent to member Gmail.'
             : 'Staff account created successfully. Login credentials were sent to staff Gmail.';
 
-        return back()->with('success', $successMessage);
+        $response = back()->with('success', $successMessage);
+
+        if ($emailWarning !== null) {
+            $response = $response->with('warning', $emailWarning);
+        }
+
+        return $response;
     }
 
     private function updateByRole(Request $request, User $user, string $role): RedirectResponse

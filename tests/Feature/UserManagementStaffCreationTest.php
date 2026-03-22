@@ -49,7 +49,7 @@ class UserManagementStaffCreationTest extends TestCase
         ]);
     }
 
-    public function test_staff_account_is_not_created_when_welcome_email_fails(): void
+    public function test_staff_account_is_created_even_when_welcome_email_fails(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -65,10 +65,11 @@ class UserManagementStaffCreationTest extends TestCase
             'email' => 'failedstaff@example.com',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHas('warning');
 
-        $this->assertDatabaseMissing('users', [
+        $this->assertDatabaseHas('users', [
             'email' => 'failedstaff@example.com',
+            'role' => 'staff',
         ]);
     }
 }

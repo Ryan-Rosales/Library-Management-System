@@ -47,7 +47,7 @@ class MembershipRequestApprovalTest extends TestCase
         ]);
     }
 
-    public function test_account_is_not_created_when_welcome_email_fails(): void
+    public function test_account_is_created_and_request_is_approved_when_welcome_email_fails(): void
     {
         $staff = User::factory()->create([
             'role' => 'staff',
@@ -65,16 +65,18 @@ class MembershipRequestApprovalTest extends TestCase
             'member_password' => 'TempPass123!',
         ]);
 
-        $response->assertSessionHasErrors('member_password');
+        $response->assertSessionHas('success');
+        $response->assertSessionHas('warning');
 
-        $this->assertDatabaseMissing('users', [
+        $this->assertDatabaseHas('users', [
             'email' => $membershipRequest->email,
+            'role' => 'member',
         ]);
 
         $this->assertDatabaseHas('membership_requests', [
             'id' => $membershipRequest->id,
-            'status' => 'pending',
-            'review_outcome' => null,
+            'status' => 'reviewed',
+            'review_outcome' => 'approved',
             'email_delivery_status' => 'failed',
             'email_delivery_message' => 'Email delivery service error',
         ]);

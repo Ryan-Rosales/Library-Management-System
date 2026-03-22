@@ -48,7 +48,7 @@ class UserManagementMemberCreationTest extends TestCase
         ]);
     }
 
-    public function test_member_account_is_not_created_when_welcome_email_fails(): void
+    public function test_member_account_is_created_even_when_welcome_email_fails(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -70,10 +70,11 @@ class UserManagementMemberCreationTest extends TestCase
             'street_address' => 'Street 1',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHas('warning');
 
-        $this->assertDatabaseMissing('users', [
+        $this->assertDatabaseHas('users', [
             'email' => 'failedmember@example.com',
+            'role' => 'member',
         ]);
     }
 }

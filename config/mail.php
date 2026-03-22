@@ -75,6 +75,12 @@ return [
             'transport' => 'array',
         ],
 
+        'gmail_api' => [
+            // Actual delivery is handled by App\Services\GmailApiMailerService.
+            // Keep a declared transport so Laravel recognizes MAIL_MAILER=gmail_api.
+            'transport' => 'array',
+        ],
+
         'failover' => [
             'transport' => 'failover',
             'mailers' => [

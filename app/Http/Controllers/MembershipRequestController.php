@@ -86,8 +86,11 @@ class MembershipRequestController extends Controller
             'member_password' => ['required', 'string', 'min:8', 'max:64'],
         ]);
 
+        $emailDeliveryStatus = 'sent';
+        $emailDeliveryMessage = null;
+
         try {
-            DB::transaction(function () use ($membershipRequest, $request, $validated, $mailService): void {
+            DB::transaction(function () use ($membershipRequest, $request, $validated, $mailService, &$emailDeliveryStatus, &$emailDeliveryMessage): void {
                 $lockedRequest = MembershipRequest::query()
                     ->whereKey($membershipRequest->id)
                     ->lockForUpdate()
@@ -124,19 +127,30 @@ class MembershipRequestController extends Controller
                     'email_verified_at' => now(),
                 ]);
 
-                $mailService->sendMemberWelcomeCredentials(
-                    $normalizedEmail,
-                    $lockedRequest->name,
-                    $validated['member_password'],
-                );
+                try {
+                    $mailService->sendMemberWelcomeCredentials(
+                        $normalizedEmail,
+                        $lockedRequest->name,
+                        $validated['member_password'],
+                    );
+                } catch (\Throwable $exception) {
+                    Log::warning('Unable to send membership welcome email via transactional mailer.', [
+                        'membership_request_id' => $lockedRequest->id,
+                        'recipient_email' => $lockedRequest->email,
+                        'error' => $exception->getMessage(),
+                    ]);
+
+                    $emailDeliveryStatus = 'failed';
+                    $emailDeliveryMessage = $exception->getMessage();
+                }
 
                 $lockedRequest->forceFill([
                     'status' => 'reviewed',
                     'review_outcome' => 'approved',
                     'review_notes' => null,
                     'reviewed_by_user_id' => $request->user()?->id,
-                    'email_delivery_status' => 'sent',
-                    'email_delivery_message' => null,
+                    'email_delivery_status' => $emailDeliveryStatus,
+                    'email_delivery_message' => $emailDeliveryMessage,
                     'seen_at' => $lockedRequest->seen_at ?? now(),
                     'resolved_at' => now(),
                 ])->save();
@@ -150,23 +164,18 @@ class MembershipRequestController extends Controller
                 route('membership-requests.index'),
             );
 
-            return back()->with('success', 'Membership request approved and member account created.');
+            $response = back()->with('success', 'Membership request approved and member account created.');
+
+            if ($emailDeliveryStatus === 'failed') {
+                $response = $response->with('warning', 'Membership was approved, but welcome email could not be sent. Please share credentials manually and recheck SMTP settings.');
+            }
+
+            return $response;
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (\Throwable $exception) {
-            Log::warning('Unable to send membership welcome email via transactional mailer.', [
-                'membership_request_id' => $membershipRequest->id,
-                'recipient_email' => $membershipRequest->email,
-                'error' => $exception->getMessage(),
-            ]);
-
-            $membershipRequest->forceFill([
-                'email_delivery_status' => 'failed',
-                'email_delivery_message' => $exception->getMessage(),
-            ])->save();
-
             return back()->withErrors([
-                'member_password' => 'Membership request was not approved because welcome email could not be sent: '.$exception->getMessage(),
+                'member_password' => 'Membership request could not be approved: '.$exception->getMessage(),
             ]);
         }
     }
