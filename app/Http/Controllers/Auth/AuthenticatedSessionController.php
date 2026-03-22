@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,9 +22,9 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request): Response
     {
-        $booksCount = Book::query()->count();
-        $membersCount = User::query()->where('role', 'member')->count();
-        $onLoanCount = BookCopy::query()->whereIn('status', ['borrowed', 'issued', 'on_loan'])->count();
+        $booksCount = Schema::hasTable('books') ? Book::query()->count() : 0;
+        $membersCount = Schema::hasTable('users') ? User::query()->where('role', 'member')->count() : 0;
+        $onLoanCount = Schema::hasTable('book_copies') ? BookCopy::query()->whereIn('status', ['borrowed', 'issued', 'on_loan'])->count() : 0;
 
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
