@@ -32,6 +32,8 @@ services:
         sync: false
       - key: QUEUE_CONNECTION
         value: database
+      - key: SESSION_DRIVER
+        value: file
       - key: MAIL_MAILER
         value: smtp
       - key: MAIL_HOST
@@ -81,6 +83,8 @@ services:
         sync: false
       - key: QUEUE_CONNECTION
         value: database
+      - key: SESSION_DRIVER
+        value: file
       - key: MAIL_MAILER
         value: smtp
       - key: MAIL_HOST
