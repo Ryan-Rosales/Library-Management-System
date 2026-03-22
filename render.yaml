@@ -5,7 +5,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     autoDeploy: true
-    preDeployCommand: php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force
+    preDeployCommand: php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force && php artisan db:seed --class=Database\\Seeders\\AdminUserSeeder --force
     healthCheckPath: /
     envVars:
       - key: APP_ENV
