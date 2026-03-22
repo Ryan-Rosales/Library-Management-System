@@ -41,4 +41,4 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
 EXPOSE 10000
 
 # Render requires an HTTP process bound to 0.0.0.0:$PORT.
-CMD ["sh", "-c", "php artisan config:clear && php artisan route:clear && php artisan view:clear && php -S 0.0.0.0:${PORT:-10000} -t public"]
+CMD ["sh", "-c", "php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan migrate --force && php artisan db:seed --class='Database\\Seeders\\AdminUserSeeder' --force && php -S 0.0.0.0:${PORT:-10000} -t public"]
