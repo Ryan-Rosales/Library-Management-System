@@ -214,3 +214,45 @@ For production process supervision, see:
 
 - `docs/operations/queue-workers.md`
 - `deploy/supervisor/libraria-queue.conf`
+
+## 12. Deploy on Render (Blueprint)
+
+This repository includes a Render Blueprint at `render.yaml`.
+
+It provisions:
+
+- `libraria-web` (Docker web service)
+- `libraria-queue` (Docker worker service for queued jobs)
+
+Steps:
+
+1. Push your latest code to GitHub.
+2. In Render, create a new Blueprint and select this repository.
+3. Review services from `render.yaml` and apply.
+4. Fill all `sync: false` environment variables in Render dashboard.
+5. Set `APP_URL` to your Render web URL (for example, `https://your-app.onrender.com`).
+6. Migrations run automatically during deploy via `preDeployCommand` on the web service.
+
+Manual fallback (if you disable pre-deploy migration):
+
+```bash
+php artisan migrate --force
+```
+
+Required secrets/config on Render:
+
+- `APP_KEY`
+- `APP_URL`
+- `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+- `MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`
+
+Queue note:
+
+- Keep the `libraria-queue` worker running, or transactional emails will stay in the `jobs` table and not be sent.
+
+Production safety notes:
+
+- Avoid destructive migration operations (`drop`, irreversible column/type changes) directly on live data without a rollback or data-migration plan.
+- Always take a database backup/snapshot before deploying schema changes.
+- Prefer additive migrations first (new columns/tables), then code rollout, then cleanup migrations in a later release.
+- For high-traffic deployments, schedule releases during low-usage windows and monitor logs/failed jobs after deploy.
