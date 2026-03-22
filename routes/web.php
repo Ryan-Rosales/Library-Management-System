@@ -29,7 +29,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('notifications/password-change/{passwordChangeRequest}/verify', [PasswordChangeRequestController::class, 'verify'])
-    ->middleware('signed')
+    ->middleware('signed:relative')
     ->name('password-change-requests.verify');
 
 Route::middleware(['auth'])->group(function () {

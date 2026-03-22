@@ -225,6 +225,12 @@ class UserAccountControlController extends Controller
             'resolved_at' => now(),
         ])->save();
 
+        $this->resolveSiblingPendingRequests(
+            requestItem: $pendingRequest,
+            reviewAction: 'approved',
+            processedByUserId: $request->user()?->id,
+        );
+
         $this->mailService->sendPasswordResetChangedNotice(
             recipientEmail: $user->email,
             recipientName: $user->name,
@@ -273,6 +279,12 @@ class UserAccountControlController extends Controller
             'seen_at' => $pendingRequest->seen_at ?? now(),
             'resolved_at' => now(),
         ])->save();
+
+        $this->resolveSiblingPendingRequests(
+            requestItem: $pendingRequest,
+            reviewAction: 'rejected',
+            processedByUserId: $request->user()?->id,
+        );
 
         $this->mailService->sendPasswordResetRejectedNotice(
             recipientEmail: $user->email,
@@ -357,4 +369,22 @@ class UserAccountControlController extends Controller
             ->where('target_role', 'staff')
             ->where('requester_role', 'member');
     }
+
+    private function resolveSiblingPendingRequests(PasswordChangeRequest $requestItem, string $reviewAction, ?int $processedByUserId): void
+    {
+        PasswordChangeRequest::query()
+            ->where('requester_user_id', $requestItem->requester_user_id)
+            ->where('requester_role', $requestItem->requester_role)
+            ->where('status', 'pending')
+            ->where('id', '!=', $requestItem->id)
+            ->update([
+                'status' => 'reviewed',
+                'review_action' => $reviewAction,
+                'processed_by_user_id' => $processedByUserId,
+                'seen_at' => now(),
+                'resolved_at' => now(),
+                'updated_at' => now(),
+            ]);
+    }
+
 }

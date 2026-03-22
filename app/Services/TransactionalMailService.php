@@ -6,6 +6,7 @@ use App\Mail\MemberWelcomeCredentialsMail;
 use App\Mail\PasswordResetChangedNoticeMail;
 use App\Mail\PasswordResetRejectedNoticeMail;
 use App\Mail\PasswordResetVerificationLinkMail;
+use App\Mail\StaffWelcomeCredentialsMail;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 
@@ -38,6 +39,19 @@ class TransactionalMailService
 
         Mail::to($recipientEmail)->queue(
             new MemberWelcomeCredentialsMail(
+                recipientName: $recipientName,
+                recipientEmail: $recipientEmail,
+                generatedPassword: $generatedPassword,
+            )
+        );
+    }
+
+    public function sendStaffWelcomeCredentials(string $recipientEmail, string $recipientName, string $generatedPassword): void
+    {
+        $this->ensureConfiguredMailer();
+
+        Mail::to($recipientEmail)->queue(
+            new StaffWelcomeCredentialsMail(
                 recipientName: $recipientName,
                 recipientEmail: $recipientEmail,
                 generatedPassword: $generatedPassword,

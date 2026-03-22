@@ -5,7 +5,7 @@ Account: {{ $requesterName }} ({{ $requesterRole }})
 Email: {{ $requesterEmail }}
 
 Click this verification link:
-{{ $verificationUrl }}
+{!! $verificationUrl !!}
 
 After verifying, the admin/staff can proceed to change your password.
 

@@ -44,6 +44,7 @@ const initialForm = {
 export default function ManageUsersPage({ title, role, records, filters, routes, columns, prefill }) {
     const entityLabel = role === 'staff' ? 'Staff' : 'Member';
     const isMemberPage = role === 'member';
+    const isStaffPage = role === 'staff';
 
     const breadcrumbs = [
         { title: 'People', href: '/members' },
@@ -61,6 +62,8 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
     const [loadingCities, setLoadingCities] = useState(false);
     const [loadingBarangays, setLoadingBarangays] = useState(false);
     const [locationError, setLocationError] = useState('');
+    const [credentialNotice, setCredentialNotice] = useState('');
+    const isPasswordLocked = Boolean(editingId);
 
     useEffect(() => {
         if (!isMemberPage) {
@@ -230,7 +233,10 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
               barangay_name: prefill?.barangay_name || '',
               street_address: prefill?.street_address || '',
           }
-        : initialForm;
+        : {
+              ...initialForm,
+              password: isStaffPage ? generateSecurePassword() : '',
+          };
 
     const { data, setData, post, put, processing, errors, reset } = useForm(initialData);
 
@@ -241,6 +247,7 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
             put(route(routes.update, editingId), {
                 preserveScroll: true,
                 onSuccess: () => {
+                    setCredentialNotice('');
                     setEditingId(null);
                     reset(...Object.keys(initialForm));
                     setProvinces([]);
@@ -251,11 +258,18 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
             return;
         }
 
+        const submittedEmail = (data.email || '').trim();
+
         post(route(routes.store), {
             preserveScroll: true,
             onSuccess: () => {
+                if (submittedEmail && (isMemberPage || isStaffPage)) {
+                    setCredentialNotice(`Credentials email sent to ${submittedEmail}.`);
+                } else {
+                    setCredentialNotice('');
+                }
                 reset(...Object.keys(initialForm));
-                if (isMemberPage) {
+                if (isMemberPage || isStaffPage) {
                     setData('password', generateSecurePassword());
                 }
                 setProvinces([]);
@@ -266,6 +280,7 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
     };
 
     const editRecord = (item) => {
+        setCredentialNotice('');
         setEditingId(item.id);
         setData({
             name: item.name,
@@ -289,9 +304,10 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
     };
 
     const cancelEdit = () => {
+        setCredentialNotice('');
         setEditingId(null);
         reset();
-        if (isMemberPage) {
+        if (isMemberPage || isStaffPage) {
             setData('password', generateSecurePassword());
         }
         setProvinces([]);
@@ -343,6 +359,12 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
                         <h2 className="text-lg font-semibold">{editingId ? `Edit ${entityLabel}` : `Add ${entityLabel}`}</h2>
                     </div>
 
+                    {credentialNotice && !editingId && (
+                        <div className="mb-4 rounded-xl border border-[#bfe8d5] bg-[#effaf4] px-3 py-2 text-xs font-medium text-[#265d48] dark:border-[#2f5f4b] dark:bg-[#0f231b] dark:text-[#b9e8d4]">
+                            {credentialNotice}
+                        </div>
+                    )}
+
                     <form onSubmit={submit} className="grid gap-3 md:grid-cols-3">
                         <div>
                             <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">NAME</label>
@@ -369,9 +391,9 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
 
                         <div>
                             <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">
-                                PASSWORD {editingId ? '(leave blank to keep current)' : ''}
+                                PASSWORD {isPasswordLocked ? '(locked during update)' : ''}
                             </label>
-                            {isMemberPage && !editingId ? (
+                            {!isPasswordLocked ? (
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
                                         <input
@@ -383,16 +405,28 @@ export default function ManageUsersPage({ title, role, records, filters, routes,
                                         />
                                         <button
                                             type="button"
-                                            aria-label="Regenerate member password"
-                                            title="Regenerate member password"
+                                            aria-label="Regenerate password"
+                                            title="Regenerate password"
                                             onClick={() => setData('password', generateSecurePassword())}
                                             className="inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl border border-[#c7d8d1] bg-white text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/10 dark:text-[#c8e6da]"
                                         >
                                             <WandSparkles size={16} />
                                         </button>
                                     </div>
-                                    <p className="text-[11px] text-[#5f756d] dark:text-[#9cb2ab]">This generated password will be sent to the member Gmail in the welcome email.</p>
+                                    <p className="text-[11px] text-[#5f756d] dark:text-[#9cb2ab]">
+                                        This generated password will be sent to the {isStaffPage ? 'staff' : 'member'} Gmail in the welcome email.
+                                    </p>
                                 </div>
+                            ) : isPasswordLocked ? (
+                                <input
+                                    type="password"
+                                    value=""
+                                    readOnly
+                                    disabled
+                                    className="w-full cursor-not-allowed rounded-xl border border-[#d4ddd8] bg-[#f3f6f4] px-3 py-2.5 text-[#8aa097] opacity-80 dark:border-white/20 dark:bg-[#172830] dark:text-[#88a096]"
+                                    placeholder="Password updates are disabled here"
+                                    title="Password cannot be updated from this page"
+                                />
                             ) : (
                                 <input
                                     type="password"

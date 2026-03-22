@@ -137,9 +137,7 @@ class UserManagementController extends Controller
         $rules = [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => $role === 'member'
-                ? ['nullable', 'string', 'min:8', 'max:64']
-                : ['required', 'string', 'min:8', 'max:64'],
+            'password' => ['nullable', 'string', 'min:8', 'max:64'],
         ];
 
         if ($role === 'member') {
@@ -168,9 +166,7 @@ class UserManagementController extends Controller
         }
 
         $providedPassword = trim((string) ($data['password'] ?? ''));
-        $plainPassword = $role === 'member'
-            ? ($providedPassword !== '' ? $providedPassword : Str::password(12))
-            : $providedPassword;
+        $plainPassword = $providedPassword !== '' ? $providedPassword : Str::password(12);
 
         $payload = [
             'name' => $data['name'],
@@ -192,6 +188,10 @@ class UserManagementController extends Controller
             ]);
         }
 
+        if ($role === 'staff') {
+            $payload['must_change_password'] = true;
+        }
+
         $createdUser = User::create($payload);
 
         if ($role === 'member') {
@@ -210,17 +210,33 @@ class UserManagementController extends Controller
             }
         }
 
+        if ($role === 'staff') {
+            try {
+                $this->mailService->sendStaffWelcomeCredentials(
+                    $createdUser->email,
+                    $createdUser->name,
+                    $plainPassword,
+                );
+            } catch (Throwable $exception) {
+                $createdUser->delete();
+
+                return back()->withErrors([
+                    'email' => 'Staff account was not created because welcome email could not be sent: '.$exception->getMessage(),
+                ]);
+            }
+        }
+
         app(ActivityNotificationService::class)->notifyPeerRoleChange(
             $request->user(),
             'people',
             'added',
             $role.' account "'.$createdUser->name.'"',
-            route($role === 'staff' ? 'staff' : 'members'),
+            route('members'),
         );
 
         $successMessage = $role === 'member'
             ? 'Member account created successfully. Login credentials were sent to member Gmail.'
-            : ucfirst($role).' account created successfully.';
+            : 'Staff account created successfully. Login credentials were sent to staff Gmail.';
 
         return back()->with('success', $successMessage);
     }
@@ -249,6 +265,12 @@ class UserManagementController extends Controller
         }
 
         $data = $request->validate($rules);
+
+        if (filled($data['password'] ?? null)) {
+            return back()->withErrors([
+                'password' => 'Password cannot be updated from this page.',
+            ]);
+        }
 
         $normalizedEmail = strtolower((string) $data['email']);
 
@@ -279,10 +301,6 @@ class UserManagementController extends Controller
             ]);
         }
 
-        if (! empty($data['password'])) {
-            $payload['password'] = Hash::make($data['password']);
-        }
-
         $user->update($payload);
 
         app(ActivityNotificationService::class)->notifyPeerRoleChange(
@@ -290,7 +308,7 @@ class UserManagementController extends Controller
             'people',
             'updated',
             $role.' account "'.$user->name.'"',
-            route($role === 'staff' ? 'staff' : 'members'),
+            route('members'),
         );
 
         return back()->with('success', ucfirst($role).' account updated successfully.');
@@ -310,7 +328,7 @@ class UserManagementController extends Controller
             'people',
             'deleted',
             $role.' account "'.$deletedName.'"',
-            route($role === 'staff' ? 'staff' : 'members'),
+            route('members'),
         );
 
         return back()->with('success', ucfirst($role).' account deleted successfully.');

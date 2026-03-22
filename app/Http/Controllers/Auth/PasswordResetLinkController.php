@@ -125,13 +125,16 @@ class PasswordResetLinkController extends Controller
 
     private function dispatchVerificationLink(User $user, string $requesterRole, PasswordChangeRequest $passwordRequest): void
     {
-        $verificationUrl = URL::temporarySignedRoute(
+        $verificationPath = URL::temporarySignedRoute(
             'password-change-requests.verify',
             now()->addHours(24),
             [
                 'passwordChangeRequest' => $passwordRequest->id,
             ],
+            absolute: false,
         );
+
+        $verificationUrl = rtrim((string) config('app.url'), '/').$verificationPath;
 
         $this->mailService->sendPasswordResetVerificationLink(
             recipientEmail: $user->email,

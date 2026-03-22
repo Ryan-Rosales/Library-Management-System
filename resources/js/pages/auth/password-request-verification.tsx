@@ -37,7 +37,18 @@ export default function PasswordRequestVerification({ status, message }: Passwor
                     </p>
                 )}
 
+                {!isVerified && (
+                    <p className="text-sm text-muted-foreground">
+                        Request a new forgot-password verification link and use the latest email message only.
+                    </p>
+                )}
+
                 <div className="flex justify-center gap-2">
+                    {!isVerified && (
+                        <Button variant="secondary" asChild>
+                            <Link href={route('password.request')}>Request new link</Link>
+                        </Button>
+                    )}
                     <Button asChild>
                         <Link href={route('login')}>Back to sign in</Link>
                     </Button>

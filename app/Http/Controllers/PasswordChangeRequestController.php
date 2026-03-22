@@ -14,7 +14,7 @@ class PasswordChangeRequestController extends Controller
 {
     public function verify(Request $request, PasswordChangeRequest $passwordChangeRequest): Response
     {
-        if (! $request->hasValidSignature()) {
+        if (! $request->hasValidSignature(false)) {
             return Inertia::render('auth/password-request-verification', [
                 'status' => 'invalid',
                 'message' => 'This verification link is invalid or has expired.',

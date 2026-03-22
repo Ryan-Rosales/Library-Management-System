@@ -156,7 +156,7 @@ class HandleInertiaRequests extends Middleware
                 'type' => $item->type,
                 'title' => $item->title,
                 'message' => $item->message,
-                'url' => $item->url,
+                'url' => $this->normalizeActivityUrlForRole($item->url, (string) $user->role),
                 'meta' => $item->meta,
                 'created_at' => optional($item->created_at)->toDateTimeString(),
                 'seen_at' => optional($item->seen_at)->toDateTimeString(),
@@ -220,5 +220,26 @@ class HandleInertiaRequests extends Middleware
             'membershipPendingCount' => $membershipPendingCount,
             'unreadCount' => $unreadCount + $membershipUnreadCount + $activityUnreadCount,
         ];
+    }
+
+    private function normalizeActivityUrlForRole(?string $url, string $role): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        if ($role !== 'staff') {
+            return $url;
+        }
+
+        $staffModulePath = parse_url(route('staff'), PHP_URL_PATH);
+        $membersModulePath = parse_url(route('members'), PHP_URL_PATH);
+        $notificationPath = parse_url($url, PHP_URL_PATH);
+
+        if ($staffModulePath && $membersModulePath && $notificationPath === $staffModulePath) {
+            return route('members');
+        }
+
+        return $url;
     }
 }

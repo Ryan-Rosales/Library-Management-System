@@ -152,6 +152,59 @@ class UserAccountControlTest extends TestCase
         ]);
     }
 
+    public function test_staff_processing_member_request_also_resolves_admin_counterpart_request(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $member = User::factory()->create(['role' => 'member']);
+
+        $this->mockResetNoticeMail();
+
+        $staffTargetRequest = PasswordChangeRequest::create([
+            'requester_user_id' => $member->id,
+            'requester_name' => $member->name,
+            'requester_email' => $member->email,
+            'requester_role' => 'member',
+            'target_role' => 'staff',
+            'status' => 'pending',
+            'verified_by_user_id' => $member->id,
+            'verified_at' => now(),
+        ]);
+
+        $adminTargetRequest = PasswordChangeRequest::create([
+            'requester_user_id' => $member->id,
+            'requester_name' => $member->name,
+            'requester_email' => $member->email,
+            'requester_role' => 'member',
+            'target_role' => 'admin',
+            'status' => 'pending',
+            'verified_by_user_id' => $member->id,
+            'verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->put(
+            route('settings.user-account-control.password.update', $member),
+            [
+                'request_id' => $staffTargetRequest->id,
+                'password' => 'NewPass123!',
+                'password_confirmation' => 'NewPass123!',
+            ]
+        );
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('password_change_requests', [
+            'id' => $staffTargetRequest->id,
+            'status' => 'reviewed',
+            'review_action' => 'approved',
+            'processed_by_user_id' => $staff->id,
+        ]);
+        $this->assertDatabaseHas('password_change_requests', [
+            'id' => $adminTargetRequest->id,
+            'status' => 'reviewed',
+            'review_action' => 'approved',
+            'processed_by_user_id' => $staff->id,
+        ]);
+    }
+
     public function test_admin_can_process_staff_password_change_request(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

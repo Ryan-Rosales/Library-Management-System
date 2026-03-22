@@ -55,9 +55,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function UserAccountControl({ viewerRole, users, pendingRequests, selectedRequestId }: UserAccountControlProps) {
+export default function UserAccountControl({
+    viewerRole,
+    users,
+    pendingRequests,
+    selectedRequestId,
+}: UserAccountControlProps) {
     const isAdmin = viewerRole === 'admin';
     const [showProcessPanel, setShowProcessPanel] = useState(true);
+
     const defaultUserId = users[0]?.id ?? 0;
     const defaultRequestId =
         selectedRequestId && pendingRequests.some((item) => item.id === selectedRequestId)
@@ -200,55 +206,58 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
                     <div className="grid gap-6 lg:grid-cols-2">
                         {isAdmin && (
                             <section className="rounded-2xl border border-[#d9e8e1] bg-white/80 p-4 dark:border-white/12 dark:bg-white/6">
-                            <h3 className="mb-1 text-sm font-semibold text-[#2a5849] dark:text-[#bfe7d7]">Update user email</h3>
-                            <p className="mb-4 text-xs text-[#657a72] dark:text-[#9ab2a8]">Admins can update the email of staff and member accounts.</p>
+                                <h3 className="mb-1 text-sm font-semibold text-[#2a5849] dark:text-[#bfe7d7]">Update user email</h3>
+                                <p className="mb-4 text-xs text-[#657a72] dark:text-[#9ab2a8]">
+                                    Admins can update the email of staff and member accounts.
+                                </p>
 
-                            <form onSubmit={submitEmailUpdate} className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email_user_id">Select user</Label>
-                                    <select
-                                        id="email_user_id"
-                                        value={emailForm.data.user_id}
-                                        onChange={(event) => onEmailUserChange(Number(event.target.value))}
-                                        className="h-10 w-full rounded-xl border border-[#d0dfd8] bg-white px-3 text-sm dark:border-white/18 dark:bg-white/8"
-                                    >
-                                        {users.map((user) => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.name} ({user.role})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <form onSubmit={submitEmailUpdate} className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email_user_id">Select user</Label>
+                                        <select
+                                            id="email_user_id"
+                                            value={emailForm.data.user_id}
+                                            onChange={(event) => onEmailUserChange(Number(event.target.value))}
+                                            className="h-10 w-full rounded-xl border border-[#d0dfd8] bg-white px-3 text-sm dark:border-white/18 dark:bg-white/8"
+                                        >
+                                            {users.map((user) => (
+                                                <option key={user.id} value={user.id}>
+                                                    {user.name} ({user.role})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={emailForm.data.email}
-                                        onChange={(event) => emailForm.setData('email', event.target.value)}
-                                        placeholder="user@library.ph"
-                                        required
-                                    />
-                                    <InputError message={emailForm.errors.email} />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={emailForm.data.email}
+                                            onChange={(event) => emailForm.setData('email', event.target.value)}
+                                            placeholder="user@library.ph"
+                                            required
+                                        />
+                                        <InputError message={emailForm.errors.email} />
+                                    </div>
 
-                                <div className="rounded-xl border border-[#d4e5dc] bg-[#f5fcf8] px-3 py-2 text-xs text-[#45695b] dark:border-white/18 dark:bg-white/8 dark:text-[#b6d9cb]">
-                                    <p>
-                                        Requester indicator:{' '}
-                                        {selectedEmailUserRequests.length > 0
-                                            ? `${selectedEmailUserRequests.length} pending forgot-password request(s) by this user`
-                                            : 'No pending forgot-password request by this user'}
-                                    </p>
-                                    {selectedEmailUserRequests.length > 0 && (
-                                        <p className="mt-1">
-                                            Latest: {selectedEmailUserRequests[0]?.requester_name || selectedEmailUserRequests[0]?.requester_email} ({selectedEmailUserRequests[0]?.requester_role})
+                                    <div className="rounded-xl border border-[#d4e5dc] bg-[#f5fcf8] px-3 py-2 text-xs text-[#45695b] dark:border-white/18 dark:bg-white/8 dark:text-[#b6d9cb]">
+                                        <p>
+                                            Requester indicator:{' '}
+                                            {selectedEmailUserRequests.length > 0
+                                                ? selectedEmailUserRequests.length + ' pending forgot-password request(s) by this user'
+                                                : 'No pending forgot-password request by this user'}
                                         </p>
-                                    )}
-                                </div>
+                                        {selectedEmailUserRequests.length > 0 && (
+                                            <p className="mt-1">
+                                                Latest: {selectedEmailUserRequests[0]?.requester_name || selectedEmailUserRequests[0]?.requester_email} (
+                                                {selectedEmailUserRequests[0]?.requester_role})
+                                            </p>
+                                        )}
+                                    </div>
 
-                                <Button disabled={emailForm.processing || !selectedEmailUser}>Save email</Button>
-                            </form>
+                                    <Button disabled={emailForm.processing || !selectedEmailUser}>Save email</Button>
+                                </form>
                             </section>
                         )}
 
@@ -298,7 +307,7 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
                                         >
                                             {pendingRequests.map((request) => (
                                                 <option key={request.id} value={request.id}>
-                                                    {(request.requester_name || request.requester_email) + ` (${request.requester_role})`}
+                                                    {(request.requester_name || request.requester_email) + ' (' + request.requester_role + ')'}
                                                 </option>
                                             ))}
                                         </select>
@@ -317,15 +326,18 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
                                                         passwordForm.setData('password', '');
                                                         passwordForm.setData('password_confirmation', '');
                                                     }}
-                                                    className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${
-                                                        isSelected
+                                                    className={
+                                                        'w-full rounded-xl border px-3 py-2 text-left text-xs transition ' +
+                                                        (isSelected
                                                             ? 'border-[#66c89c] bg-[#eaf8f1] shadow-sm dark:border-[#72d7aa]/60 dark:bg-[#14372d]'
-                                                            : 'border-[#d4e5dc] bg-[#f8fcfa] hover:border-[#9bcfb7] hover:bg-[#f1f9f5] dark:border-white/15 dark:bg-white/6 dark:hover:border-[#76b89c] dark:hover:bg-white/10'
-                                                    }`}
+                                                            : 'border-[#d4e5dc] bg-[#f8fcfa] hover:border-[#9bcfb7] hover:bg-[#f1f9f5] dark:border-white/15 dark:bg-white/6 dark:hover:border-[#76b89c] dark:hover:bg-white/10')
+                                                    }
                                                 >
                                                     <p className="font-semibold text-[#2f5d4d] dark:text-[#bfe7d7]">{request.requester_name || request.requester_email}</p>
                                                     <p className="mt-0.5 text-[#5e766b] dark:text-[#9cb9ae]">{request.requester_email}</p>
-                                                    <p className="mt-0.5 text-[11px] text-[#5e766b] dark:text-[#9cb9ae]">Role: {request.requester_role} | Target: {request.target_role}</p>
+                                                    <p className="mt-0.5 text-[11px] text-[#5e766b] dark:text-[#9cb9ae]">
+                                                        Role: {request.requester_role} | Target: {request.target_role}
+                                                    </p>
                                                     <p className="mt-0.5 text-[11px] text-[#5e766b] dark:text-[#9cb9ae]">
                                                         Verification: {request.verified_at ? 'Verified from email link' : 'Pending email verification'}
                                                     </p>
@@ -337,9 +349,12 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
 
                                     <div className="rounded-xl border border-[#d4e5dc] bg-[#f5fcf8] px-3 py-2 text-xs text-[#45695b] dark:border-white/18 dark:bg-white/8 dark:text-[#b6d9cb]">
                                         <p>
-                                            Requester: {selectedStaffUser?.name || selectedPasswordRequest?.requester_name || 'Unknown'} ({selectedPasswordRequest?.requester_email || '-'})
+                                            Requester: {selectedStaffUser?.name || selectedPasswordRequest?.requester_name || 'Unknown'} (
+                                            {selectedPasswordRequest?.requester_email || '-'})
                                         </p>
-                                        <p className="mt-1">Role: {selectedPasswordRequest?.requester_role || '-'} | Target: {selectedPasswordRequest?.target_role || '-'}</p>
+                                        <p className="mt-1">
+                                            Role: {selectedPasswordRequest?.requester_role || '-'} | Target: {selectedPasswordRequest?.target_role || '-'}
+                                        </p>
                                         <p className="mt-1">Verification: {selectedPasswordRequest?.verified_at ? 'Verified' : 'Pending verification from email link'}</p>
                                         {selectedPasswordRequest?.reason && <p className="mt-1">Reason: {selectedPasswordRequest.reason}</p>}
                                     </div>
@@ -353,12 +368,12 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
                                     <div className="grid gap-2">
                                         <div className="flex items-center justify-between gap-2">
                                             <Label htmlFor="password">New password</Label>
-                                            {selectedPasswordRequest?.requester_role === 'member' && (
+                                            {selectedPasswordRequest && (selectedPasswordRequest.requester_role === 'member' || isAdmin) && (
                                                 <Button
                                                     type="button"
                                                     variant="outline"
-                                                    aria-label="Auto-generate member password"
-                                                    title="Auto-generate member password"
+                                                    aria-label="Auto-generate password"
+                                                    title="Auto-generate password"
                                                     onClick={() => {
                                                         const generatedPassword = generateSecurePassword();
                                                         passwordForm.setData('password', generatedPassword);
@@ -395,7 +410,16 @@ export default function UserAccountControl({ viewerRole, users, pendingRequests,
                                     </div>
 
                                     <div className="flex flex-wrap gap-2">
-                                        <Button disabled={passwordForm.processing || !selectedStaffUser || !selectedPasswordRequest || !isVerifiedForCurrentUser}>Update password</Button>
+                                        <Button
+                                            disabled={
+                                                passwordForm.processing ||
+                                                !selectedStaffUser ||
+                                                !selectedPasswordRequest ||
+                                                !isVerifiedForCurrentUser
+                                            }
+                                        >
+                                            Update password
+                                        </Button>
                                         <Button
                                             type="button"
                                             variant="destructive"
