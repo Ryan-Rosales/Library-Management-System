@@ -72,6 +72,26 @@ class CirculationController extends Controller
             ])
             ->values();
 
+        $readyReservations = BookReservation::query()
+            ->with(['book:id,title,author', 'member:id,name,email'])
+            ->where('status', 'fulfilled')
+            ->whereNotNull('claim_at')
+            ->whereNotNull('member_due_at')
+            ->orderBy('queued_at')
+            ->get()
+            ->map(fn (BookReservation $reservation) => [
+                'id' => $reservation->id,
+                'book_title' => $reservation->book?->title,
+                'book_author' => $reservation->book?->author,
+                'member_name' => $reservation->member?->name,
+                'member_email' => $reservation->member?->email,
+                'status' => $reservation->status,
+                'claim_at' => optional($reservation->claim_at)->toDateString(),
+                'due_at' => optional($reservation->member_due_at)->toDateString(),
+                'queued_at' => optional($reservation->queued_at)->toDateTimeString(),
+            ])
+            ->values();
+
         return Inertia::render('circulation/borrow', [
             'filters' => [
                 'search' => $search,
@@ -82,6 +102,7 @@ class CirculationController extends Controller
                 'availableCopies' => $copyOptions,
                 'members' => $memberOptions,
             ],
+            'reservations' => $readyReservations,
         ]);
     }
 
@@ -289,6 +310,141 @@ class CirculationController extends Controller
         );
 
         return back()->with('success', "{$quantity} book copy/copies borrowed successfully.");
+    }
+
+    public function issueReservation(Request $request): RedirectResponse
+    {
+        if (! $this->hasCirculationColumns()) {
+            return back()->with('error', 'Circulation columns are missing. Please run database migrations.');
+        }
+
+        $data = $request->validate([
+            'reservation_id' => ['required', 'exists:book_reservations,id'],
+        ]);
+
+        $reservation = BookReservation::query()->whereKey((int) $data['reservation_id'])->first();
+
+        if (! $reservation || $reservation->status !== 'fulfilled') {
+            return back()->with('error', 'Selected reservation is not ready to be issued.');
+        }
+
+        if (! $reservation->claim_at || ! $reservation->member_due_at) {
+            return back()->with('error', 'Selected reservation does not have member-chosen claim and due dates.');
+        }
+
+        $error = null;
+        $borrowedAt = $reservation->claim_at ?? now();
+        $dueAt = $reservation->member_due_at;
+
+        DB::transaction(function () use ($reservation, $borrowedAt, $dueAt, &$error): void {
+            $bookCopy = BookCopy::query()
+                ->where('book_id', $reservation->book_id)
+                ->where('status', 'reserved')
+                ->orderBy('returned_at')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $bookCopy) {
+                $error = 'No reserved copy is currently available for this reservation.';
+                return;
+            }
+
+            $bookCopy->update([
+                'status' => 'issued',
+                'borrower_id' => $reservation->member_id,
+                'borrowed_at' => $borrowedAt,
+                'due_at' => $dueAt,
+                'returned_at' => null,
+            ]);
+
+            CirculationLog::create([
+                'book_id' => $bookCopy->book_id,
+                'book_copy_id' => $bookCopy->id,
+                'member_id' => $reservation->member_id,
+                'borrowed_at' => $borrowedAt,
+                'due_at' => $dueAt,
+                'fine_amount' => 0,
+                'fine_status' => 'none',
+            ]);
+
+            $reservation->update([
+                'status' => 'completed',
+            ]);
+        });
+
+        if ($error) {
+            return back()->with('error', $error);
+        }
+
+        $this->syncBookAvailability((int) $reservation->book_id);
+
+        $bookTitle = Book::query()->whereKey((int) $reservation->book_id)->value('title') ?? 'book';
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'circulation',
+            'borrowed',
+            '1 reserved copy of "'.$bookTitle.'"',
+            route('circulation.borrow.page'),
+        );
+
+        return back()->with('success', 'Reserved copy issued successfully.');
+    }
+
+    public function rejectReservation(Request $request): RedirectResponse
+    {
+        if (! $this->hasCirculationColumns()) {
+            return back()->with('error', 'Circulation columns are missing. Please run database migrations.');
+        }
+
+        $data = $request->validate([
+            'reservation_id' => ['required', 'exists:book_reservations,id'],
+        ]);
+
+        $reservation = BookReservation::query()->whereKey((int) $data['reservation_id'])->first();
+
+        if (! $reservation || $reservation->status !== 'fulfilled') {
+            return back()->with('error', 'Selected reservation is not ready to be rejected.');
+        }
+
+        $bookId = (int) $reservation->book_id;
+
+        DB::transaction(function () use ($reservation, $bookId): void {
+            $reservation->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+            ]);
+
+            $reservedCopy = BookCopy::query()
+                ->where('book_id', $bookId)
+                ->where('status', 'reserved')
+                ->orderBy('returned_at')
+                ->lockForUpdate()
+                ->first();
+
+            if ($reservedCopy) {
+                $reservedCopy->update([
+                    'status' => 'available',
+                    'borrower_id' => null,
+                    'borrowed_at' => null,
+                    'due_at' => null,
+                ]);
+            }
+        });
+
+        $this->syncBookAvailability($bookId);
+
+        $bookTitle = Book::query()->whereKey($bookId)->value('title') ?? 'book';
+
+        app(ActivityNotificationService::class)->notifyPeerRoleChange(
+            $request->user(),
+            'circulation',
+            'rejected',
+            'reservation for "'.$bookTitle.'"',
+            route('circulation.borrow.page'),
+        );
+
+        return back()->with('success', 'Reservation rejected and copy returned to available pool.');
     }
 
     public function returnBook(Request $request): RedirectResponse

@@ -69,6 +69,6 @@ class User extends Authenticatable
 
         $version = optional($this->updated_at)?->timestamp;
 
-        return Storage::url($this->profile_photo_path).($version ? '?v='.$version : '');
+        return Storage::disk('public')->url($this->profile_photo_path).($version ? '?v='.$version : '');
     }
 }

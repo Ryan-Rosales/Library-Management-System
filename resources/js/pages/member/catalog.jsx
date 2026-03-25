@@ -1,5 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import GlassSelect from '@/components/ui/glass-select';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Head, Link, router } from '@inertiajs/react';
 import { Filter, Search } from 'lucide-react';
 import { useState } from 'react';
@@ -51,6 +52,10 @@ export default function MemberCatalog({ books, filters, options }) {
 
     const reserveBook = (bookId) => {
         router.post(route('member.catalog.reserve', bookId), {}, { preserveScroll: true });
+    };
+
+    const cancelReservation = (reservationId) => {
+        router.patch(route('member.reservations.cancel', reservationId), {}, { preserveScroll: true });
     };
 
     return (
@@ -152,11 +157,61 @@ export default function MemberCatalog({ books, filters, options }) {
                                         </td>
                                         <td className="px-4 py-3.5 text-right">
                                             {book.is_reserved_by_member ? (
-                                                <span className="inline-flex rounded-lg bg-[#e6f3ec] px-2.5 py-1 text-xs font-semibold text-[#2f7859] dark:bg-[#17362c] dark:text-[#9fe3c4]">Reserved</span>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <button className="rounded-lg bg-[#e6f3ec] px-2.5 py-1 text-xs font-semibold text-[#2f7859] transition hover:bg-[#d9ecdf] dark:bg-[#17362c] dark:text-[#9fe3c4]">
+                                                            Reserved
+                                                        </button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogTitle>Reservation details</DialogTitle>
+                                                        <DialogDescription>
+                                                            You have an active reservation for this title. You can keep it in the queue or cancel it if you no longer need it.
+                                                        </DialogDescription>
+                                                        <DialogFooter>
+                                                            <DialogClose asChild>
+                                                                <button className="rounded-xl border border-[#c7d8d1] bg-white px-3 py-1.5 text-xs font-semibold text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/8 dark:text-[#c8e6da]">
+                                                                    Close
+                                                                </button>
+                                                            </DialogClose>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => cancelReservation(book.reservation_id)}
+                                                                className="rounded-xl border border-[#d7a9a4] bg-[#fff5f4] px-3 py-1.5 text-xs font-semibold text-[#b04c40] transition hover:bg-[#ffe9e7] dark:border-[#7c3f3a] dark:bg-[#331d1b] dark:text-[#f0aca3]"
+                                                            >
+                                                                Cancel reservation
+                                                            </button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
                                             ) : book.can_reserve ? (
-                                                <button onClick={() => reserveBook(book.id)} className="rounded-lg bg-[#226ea8] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#1f5f90]">
-                                                    Reserve
-                                                </button>
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <button className="rounded-lg bg-[#226ea8] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#1f5f90]">
+                                                            Reserve
+                                                        </button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogTitle>Reserve this title?</DialogTitle>
+                                                        <DialogDescription>
+                                                            Reserving this book will place you in the queue and, when a copy is prepared for you, you can choose when to claim it and set your own due date.
+                                                        </DialogDescription>
+                                                        <DialogFooter>
+                                                            <DialogClose asChild>
+                                                                <button className="rounded-xl border border-[#c7d8d1] bg-white px-3 py-1.5 text-xs font-semibold text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/8 dark:text-[#c8e6da]">
+                                                                    Not now
+                                                                </button>
+                                                            </DialogClose>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => reserveBook(book.id)}
+                                                                className="rounded-xl bg-[linear-gradient(90deg,#226ea8_0%,#1d5b8a_100%)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
+                                                            >
+                                                                Confirm reservation
+                                                            </button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
                                             ) : (
                                                 <span className="inline-flex rounded-lg bg-[#eef2f6] px-2.5 py-1 text-xs font-semibold text-[#5a6f82] dark:bg-[#263541] dark:text-[#a7bdd1]">Available now</span>
                                             )}

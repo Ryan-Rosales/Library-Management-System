@@ -1,5 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import GlassSelect from '@/components/ui/glass-select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeftRight, Search } from 'lucide-react';
 import { useState } from 'react';
@@ -11,13 +12,16 @@ const initialForm = {
     due_at: '',
 };
 
-export default function BorrowPage({ availableCopies, options, filters }) {
+export default function BorrowPage({ availableCopies, options, filters, reservations = [] }) {
     const breadcrumbs = [
         { title: 'Circulation', href: '/borrow' },
         { title: 'Borrow', href: '/borrow' },
     ];
 
     const [search, setSearch] = useState(filters?.search || '');
+    const reservationsCount = Array.isArray(reservations) ? reservations.length : 0;
+    const [isReservationDialogOpen, setReservationDialogOpen] = useState(false);
+    const [activeReservationId, setActiveReservationId] = useState(reservations[0]?.id || '');
 
     const defaultBookId = options?.availableBooks?.[0]?.value?.toString() || '';
 
@@ -58,6 +62,17 @@ export default function BorrowPage({ availableCopies, options, filters }) {
 
     const maxBorrowable = Math.max(filteredCopyOptions.length, 1);
 
+    const openReservationDialog = () => {
+        setReservationDialogOpen(true);
+        if (!activeReservationId && reservations[0]) {
+            setActiveReservationId(reservations[0].id);
+        }
+    };
+
+    const closeReservationDialog = () => {
+        setReservationDialogOpen(false);
+    };
+
     const applySearch = (event) => {
         event.preventDefault();
 
@@ -88,9 +103,23 @@ export default function BorrowPage({ availableCopies, options, filters }) {
                 </div>
 
                 <section className="page-enter-item relative z-10 rounded-3xl border border-white/70 bg-white/82 p-5 shadow-[0_24px_50px_rgba(33,72,60,0.12)] backdrop-blur dark:border-white/15 dark:bg-[#0f1d24cc] dark:shadow-[0_24px_55px_rgba(3,9,14,0.6)]" style={{ animationDelay: '70ms' }}>
-                    <div className="mb-4 flex items-center gap-2 text-[#2c6d52] dark:text-[#96e2c2]">
-                        <ArrowLeftRight size={18} />
-                        <h2 className="text-lg font-semibold">Borrow Books</h2>
+                    <div className="mb-4 flex flex-col gap-2 text-[#2c6d52] dark:text-[#96e2c2] md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-center gap-2">
+                            <ArrowLeftRight size={18} />
+                            <h2 className="text-lg font-semibold">Borrow Books</h2>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={openReservationDialog}
+                            className="inline-flex items-center gap-2 rounded-xl border border-[#c7d8d1] bg-white px-3 py-1.5 text-xs font-semibold text-[#355f4f] shadow-sm transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/8 dark:text-[#c8e6da]"
+                        >
+                            View ready reservations
+                            {reservationsCount > 0 && (
+                                <span className="flex h-4 min-w-[1.25rem] items-center justify-center rounded-full bg-[#2f8e63] px-1.5 text-[10px] font-semibold text-white">
+                                    {reservationsCount}
+                                </span>
+                            )}
+                        </button>
                     </div>
 
                     <form onSubmit={submitBorrow} className="grid gap-3 md:grid-cols-4">
@@ -236,6 +265,81 @@ export default function BorrowPage({ availableCopies, options, filters }) {
                     </div>
                 </section>
             </div>
+
+            <Dialog open={isReservationDialogOpen} onOpenChange={setReservationDialogOpen}>
+                <DialogContent>
+                    <DialogTitle>Process scheduled reservations</DialogTitle>
+                    <DialogDescription>
+                        These reservations already have member-chosen claim and due dates. You can accept (issue) or reject them.
+                    </DialogDescription>
+
+                    {reservations.length === 0 ? (
+                        <p className="mt-3 text-sm text-[#5f756d] dark:text-[#9cb2ab]">There are no fulfilled reservations at the moment.</p>
+                    ) : (
+                        <form className="mt-4 space-y-4">
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">RESERVATION</label>
+                                <select
+                                    value={activeReservationId}
+                                    onChange={(event) => setActiveReservationId(Number(event.target.value))}
+                                    className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-sm text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
+                                >
+                                    {reservations.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.book_title}
+                                            {' - '} {item.member_name} ({item.member_email}) [Claim: {item.claim_at || 'n/a'} | Due: {item.due_at || 'n/a'}]
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <DialogFooter className="gap-2">
+                                <button
+                                    type="button"
+                                    onClick={closeReservationDialog}
+                                    className="rounded-xl border border-[#c7d8d1] bg-white px-3 py-1.5 text-xs font-semibold text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/8 dark:text-[#c8e6da]"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!activeReservationId) return;
+                                        router.post(
+                                            route('circulation.reject-reservation'),
+                                            { reservation_id: activeReservationId },
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () => closeReservationDialog(),
+                                            },
+                                        );
+                                    }}
+                                    className="rounded-xl border border-[#d7a9a4] bg-[#fff5f4] px-3 py-1.5 text-xs font-semibold text-[#b04c40] transition hover:bg-[#ffe9e7] dark:border-[#7c3f3a] dark:bg-[#331d1b] dark:text-[#f0aca3]"
+                                >
+                                    Reject reservation
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!activeReservationId) return;
+                                        router.post(
+                                            route('circulation.issue-reservation'),
+                                            { reservation_id: activeReservationId },
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () => closeReservationDialog(),
+                                            },
+                                        );
+                                    }}
+                                    className="rounded-xl bg-[linear-gradient(90deg,#2fa06f_0%,#2085c1_100%)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95"
+                                >
+                                    Accept & issue
+                                </button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

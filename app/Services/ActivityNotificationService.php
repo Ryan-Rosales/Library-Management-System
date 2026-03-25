@@ -9,15 +9,21 @@ class ActivityNotificationService
 {
     public function notifyPeerRoleChange(?User $actor, string $module, string $action, string $subject, ?string $url = null): void
     {
-        if (! $actor || ! in_array($actor->role, ['admin', 'staff'], true)) {
+        if (! $actor) {
             return;
         }
 
-        $recipientRole = $actor->role === 'admin' ? 'staff' : 'admin';
+        if ($actor->role === 'member') {
+            $recipientIds = User::query()
+                ->whereIn('role', ['admin', 'staff'])
+                ->pluck('id');
+        } else {
+            $recipientRole = $actor->role === 'admin' ? 'staff' : 'admin';
 
-        $recipientIds = User::query()
-            ->where('role', $recipientRole)
-            ->pluck('id');
+            $recipientIds = User::query()
+                ->where('role', $recipientRole)
+                ->pluck('id');
+        }
 
         if ($recipientIds->isEmpty()) {
             return;

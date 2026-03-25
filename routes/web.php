@@ -54,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('member/history', [MemberPortalController::class, 'history'])->name('member.history');
         Route::get('member/reservations', [MemberPortalController::class, 'reservations'])->name('member.reservations');
         Route::patch('member/reservations/{bookReservation}/cancel', [MemberPortalController::class, 'cancelReservation'])->name('member.reservations.cancel');
+        Route::post('member/reservations/{bookReservation}/claim', [MemberPortalController::class, 'claimReservation'])->name('member.reservations.claim');
         Route::get('member/penalties', [MemberPortalController::class, 'penalties'])->name('member.penalties');
 
         Route::post('member/notifications/{memberNotification}/read', [MemberNotificationController::class, 'markRead'])
@@ -107,6 +108,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('penalties/manage', [StaffPenaltyController::class, 'index'])->name('staff.penalties.index');
         Route::patch('penalties/manage/{circulationLog}/clear', [StaffPenaltyController::class, 'markCleared'])->name('staff.penalties.clear');
         Route::post('borrow-return/borrow', [CirculationController::class, 'borrow'])->name('circulation.borrow');
+        Route::post('borrow-return/issue-reservation', [CirculationController::class, 'issueReservation'])->name('circulation.issue-reservation');
+        Route::post('borrow-return/reject-reservation', [CirculationController::class, 'rejectReservation'])->name('circulation.reject-reservation');
         Route::post('borrow-return/return', [CirculationController::class, 'returnBook'])->name('circulation.return');
 
         Route::get('members', [UserManagementController::class, 'members'])->name('members');

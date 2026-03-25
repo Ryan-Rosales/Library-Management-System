@@ -33,7 +33,7 @@ class MemberPortalController extends Controller
 
         $pendingReservations = BookReservation::query()
             ->where('member_id', $member->id)
-            ->where('status', 'queued')
+            ->whereIn('status', ['queued', 'fulfilled'])
             ->count();
 
         $pendingPenalties = (int) CirculationLog::query()
@@ -135,7 +135,7 @@ class MemberPortalController extends Controller
 
         $activeReservationsByBook = BookReservation::query()
             ->where('member_id', $memberId)
-            ->where('status', 'queued')
+            ->whereIn('status', ['queued', 'fulfilled'])
             ->pluck('id', 'book_id');
 
         $bookData = $books->through(function (Book $book) use ($shelfLocations, $activeReservationsByBook) {
@@ -160,7 +160,7 @@ class MemberPortalController extends Controller
                     'checked_out' => $checkedOutCount,
                     'on_hold' => max($onHoldCount, $queuedCount),
                 ],
-                'can_reserve' => $availableCount === 0,
+                'can_reserve' => ! $activeReservationsByBook->has($book->id),
                 'is_reserved_by_member' => $activeReservationsByBook->has($book->id),
                 'reservation_id' => $activeReservationsByBook->get($book->id),
             ];
@@ -193,7 +193,7 @@ class MemberPortalController extends Controller
         $alreadyQueued = BookReservation::query()
             ->where('book_id', $book->id)
             ->where('member_id', $member->id)
-            ->where('status', 'queued')
+            ->whereIn('status', ['queued', 'fulfilled'])
             ->exists();
 
         if ($alreadyQueued) {
@@ -210,29 +210,54 @@ class MemberPortalController extends Controller
             return back()->with('info', 'You already borrowed this title.');
         }
 
-        $availableCopies = BookCopy::query()
-            ->where('book_id', $book->id)
-            ->where('status', 'available')
-            ->count();
-
-        if ($availableCopies > 0) {
-            return back()->with('info', 'This title currently has available copies and does not need a reservation.');
-        }
-
         DB::transaction(function () use ($book, $member): void {
             $nextPosition = (int) BookReservation::query()
                 ->where('book_id', $book->id)
                 ->where('status', 'queued')
                 ->max('queue_position') + 1;
 
-            BookReservation::create([
+            $reservation = BookReservation::create([
                 'book_id' => $book->id,
                 'member_id' => $member->id,
                 'status' => 'queued',
                 'queue_position' => max($nextPosition, 1),
                 'queued_at' => now(),
             ]);
+
+            if ($reservation->queue_position === 1) {
+                $availableCopy = BookCopy::query()
+                    ->where('book_id', $book->id)
+                    ->where('status', 'available')
+                    ->orderBy('accession_number')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($availableCopy) {
+                    $availableCopy->update([
+                        'status' => 'reserved',
+                        'borrower_id' => null,
+                        'borrowed_at' => null,
+                        'due_at' => null,
+                        'returned_at' => null,
+                    ]);
+
+                    $reservation->update([
+                        'status' => 'fulfilled',
+                        'fulfilled_at' => now(),
+                    ]);
+                }
+            }
         });
+
+        $this->syncBookAvailability($book->id);
+
+        app(\App\Services\ActivityNotificationService::class)->notifyPeerRoleChange(
+            $member,
+            'reservations',
+            'requested',
+            'a reservation for "'.$book->title.'"',
+            route('circulation.borrow.page'),
+        );
 
         return back()->with('success', 'Book reserved successfully. You are now in queue.');
     }
@@ -315,16 +340,36 @@ class MemberPortalController extends Controller
             ->latest('queued_at')
             ->paginate(10)
             ->withQueryString()
-            ->through(fn (BookReservation $reservation) => [
-                'id' => $reservation->id,
-                'title' => $reservation->book?->title,
-                'author' => $reservation->book?->author,
-                'isbn' => $reservation->book?->isbn,
-                'shelf' => $reservation->book?->shelf,
-                'status' => $reservation->status,
-                'queue_position' => $reservation->queue_position,
-                'queued_at' => optional($reservation->queued_at)->toDateTimeString(),
-            ]);
+            ->through(function (BookReservation $reservation) use ($memberId) {
+                $claimBy = optional($reservation->claim_at ?? $reservation->fulfilled_at)?->toDateString();
+
+                $returnBy = null;
+
+                if ($reservation->status === 'completed') {
+                    $dueDate = CirculationLog::query()
+                        ->where('member_id', $memberId)
+                        ->where('book_id', $reservation->book_id)
+                        ->latest('borrowed_at')
+                        ->value('due_at');
+
+                    if ($dueDate) {
+                        $returnBy = Carbon::parse($dueDate)->toDateString();
+                    }
+                }
+
+                return [
+                    'id' => $reservation->id,
+                    'title' => $reservation->book?->title,
+                    'author' => $reservation->book?->author,
+                    'isbn' => $reservation->book?->isbn,
+                    'shelf' => $reservation->book?->shelf,
+                    'status' => $reservation->status,
+                    'queue_position' => $reservation->queue_position,
+                    'queued_at' => optional($reservation->queued_at)->toDateTimeString(),
+                    'claim_by' => $claimBy,
+                    'return_by' => $returnBy,
+                ];
+            });
 
         return Inertia::render('member/reservations', [
             'reservations' => $reservations,
@@ -358,6 +403,55 @@ class MemberPortalController extends Controller
             ->decrement('queue_position');
 
         return back()->with('success', 'Reservation cancelled.');
+    }
+
+    public function claimReservation(Request $request, BookReservation $bookReservation): RedirectResponse
+    {
+        $member = $request->user();
+
+        if ((int) $bookReservation->member_id !== (int) $member->id) {
+            abort(403);
+        }
+
+        if ($bookReservation->status !== 'fulfilled') {
+            return back()->with('error', 'Only fulfilled reservations can be claimed.');
+        }
+
+        $data = $request->validate([
+            'claim_at' => ['required', 'date'],
+            'due_at' => ['required', 'date', 'after_or_equal:claim_at'],
+        ]);
+
+        DB::transaction(function () use ($bookReservation, $data): void {
+            $bookReservation->update([
+                'claim_at' => Carbon::parse($data['claim_at']),
+                'member_due_at' => Carbon::parse($data['due_at'])->toDateString(),
+            ]);
+        });
+
+        $bookTitle = Book::query()->whereKey((int) $bookReservation->book_id)->value('title') ?? 'book';
+
+        app(\App\Services\ActivityNotificationService::class)->notifyPeerRoleChange(
+            $member,
+            'reservations',
+            'scheduled',
+            'a reserved copy of "'.$bookTitle.'" with chosen claim and due dates',
+            route('circulation.borrow.page'),
+        );
+
+        return back()->with('success', 'Claim and due dates saved. Please wait for staff to process your reservation.');
+    }
+
+    private function syncBookAvailability(int $bookId): void
+    {
+        $availableCount = BookCopy::query()
+            ->where('book_id', $bookId)
+            ->where('status', 'available')
+            ->count();
+
+        Book::query()->whereKey($bookId)->update([
+            'copies_available' => $availableCount,
+        ]);
     }
 
     public function penalties(Request $request): Response

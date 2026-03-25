@@ -45,6 +45,10 @@ function formatStatusLabel(status) {
         return '-';
     }
 
+    if (status === 'issued') {
+        return 'Borrowed';
+    }
+
     return String(status)
         .replaceAll('_', ' ')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());

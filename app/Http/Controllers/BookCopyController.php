@@ -66,17 +66,6 @@ class BookCopyController extends Controller
                         ['value' => 'damaged', 'label' => 'Damaged'],
                     ],
                 ],
-                [
-                    'name' => 'status',
-                    'label' => 'STATUS',
-                    'type' => 'select',
-                    'required' => true,
-                    'options' => [
-                        ['value' => 'available', 'label' => 'Available'],
-                        ['value' => 'issued', 'label' => 'Issued'],
-                        ['value' => 'reserved', 'label' => 'Reserved'],
-                    ],
-                ],
                 ['name' => 'acquired_at', 'label' => 'ACQUIRED DATE', 'type' => 'date'],
             ],
             'columns' => [
@@ -95,7 +84,6 @@ class BookCopyController extends Controller
             'book_id' => ['required', 'exists:books,id'],
             'copies_count' => ['required', 'integer', 'min:1', 'max:500'],
             'condition' => ['required', Rule::in(['good', 'fair', 'damaged'])],
-            'status' => ['required', Rule::in(['available', 'issued', 'reserved'])],
             'acquired_at' => ['nullable', 'date'],
         ]);
 
@@ -107,7 +95,7 @@ class BookCopyController extends Controller
                     'book_id' => $data['book_id'],
                     'accession_number' => $this->generateAccessionNumber((int) $data['book_id']),
                     'condition' => $data['condition'],
-                    'status' => $data['status'],
+                    'status' => 'available',
                     'acquired_at' => $data['acquired_at'] ?? null,
                 ]);
             }
@@ -133,7 +121,6 @@ class BookCopyController extends Controller
         $data = $request->validate([
             'book_id' => ['required', 'exists:books,id'],
             'condition' => ['required', Rule::in(['good', 'fair', 'damaged'])],
-            'status' => ['required', Rule::in(['available', 'issued', 'reserved'])],
             'acquired_at' => ['nullable', 'date'],
         ]);
 

@@ -1,5 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 function statusClass(status) {
     if (status === 'queued') return 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300';
@@ -13,12 +15,51 @@ export default function MemberReservations({ reservations }) {
         { title: 'Reservations', href: '/member/reservations' },
     ];
 
+    const [isClaimDialogOpen, setClaimDialogOpen] = useState(false);
+    const [activeReservation, setActiveReservation] = useState(null);
+    const [claimAt, setClaimAt] = useState('');
+    const [dueAt, setDueAt] = useState('');
+
     const cancelReservation = (id) => {
         if (!window.confirm('Cancel this reservation?')) {
             return;
         }
 
         router.patch(route('member.reservations.cancel', id), {}, { preserveScroll: true });
+    };
+
+    const openClaimDialog = (reservation) => {
+        setActiveReservation(reservation);
+        setClaimAt('');
+        setDueAt('');
+        setClaimDialogOpen(true);
+    };
+
+    const closeClaimDialog = () => {
+        setClaimDialogOpen(false);
+        setActiveReservation(null);
+        setClaimAt('');
+        setDueAt('');
+    };
+
+    const submitClaim = (event) => {
+        event.preventDefault();
+
+        if (!activeReservation) {
+            return;
+        }
+
+        router.post(
+            route('member.reservations.claim', activeReservation.id),
+            {
+                claim_at: claimAt,
+                due_at: dueAt,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => closeClaimDialog(),
+            },
+        );
     };
 
     return (
@@ -57,16 +98,27 @@ export default function MemberReservations({ reservations }) {
                                         <td className="px-4 py-3.5 text-xs text-[#45637a] dark:text-[#b7cfe3]">
                                             <p>Position: #{item.queue_position || '-'}</p>
                                             <p>Queued: {item.queued_at || 'N/A'}</p>
+                                            <p>Claim by: {item.claim_by || 'N/A'}</p>
+                                            <p>Return by: {item.return_by || 'N/A'}</p>
                                         </td>
                                         <td className="px-4 py-3.5">
                                             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(item.status)}`}>{item.status}</span>
                                         </td>
                                         <td className="px-4 py-3.5 text-right">
-                                            {item.status === 'queued' ? (
+                                            {item.status === 'queued' && (
                                                 <button onClick={() => cancelReservation(item.id)} className="rounded-lg border border-[#d7a9a4] bg-[#fff5f4] px-2.5 py-1 text-xs font-semibold text-[#b04c40] transition hover:bg-[#ffe9e7] dark:border-[#7c3f3a] dark:bg-[#331d1b] dark:text-[#f0aca3]">
                                                     Cancel
                                                 </button>
-                                            ) : (
+                                            )}
+                                            {item.status === 'fulfilled' && (
+                                                <button
+                                                    onClick={() => openClaimDialog(item)}
+                                                    className="rounded-lg bg-[#226ea8] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#1f5f90]"
+                                                >
+                                                    Claim &amp; borrow
+                                                </button>
+                                            )}
+                                            {item.status !== 'queued' && item.status !== 'fulfilled' && (
                                                 <span className="text-xs text-[#6d8297] dark:text-[#9fb4c8]">No action</span>
                                             )}
                                         </td>
@@ -90,6 +142,62 @@ export default function MemberReservations({ reservations }) {
                         </div>
                     )}
                 </section>
+                <Dialog open={isClaimDialogOpen} onOpenChange={setClaimDialogOpen}>
+                    <DialogContent>
+                        <DialogTitle>Claim reserved copy</DialogTitle>
+                        <DialogDescription>
+                            Choose when you will claim this reserved book and set your due date. These dates will be used for your loan record.
+                        </DialogDescription>
+
+                        {activeReservation && (
+                            <form onSubmit={submitClaim} className="mt-4 space-y-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-[#1d3f5a] dark:text-[#d7e9fb]">{activeReservation.title}</p>
+                                    <p className="text-xs text-[#6a8399] dark:text-[#9eb5c9]">{activeReservation.author}</p>
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">CLAIM DATE</label>
+                                    <input
+                                        type="date"
+                                        value={claimAt}
+                                        onChange={(event) => setClaimAt(event.target.value)}
+                                        className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-sm text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-xs font-semibold tracking-wide text-[#4f625c] dark:text-[#9cb7ad]">DUE DATE</label>
+                                    <input
+                                        type="date"
+                                        value={dueAt}
+                                        onChange={(event) => setDueAt(event.target.value)}
+                                        className="w-full rounded-xl border border-[#d4ddd8] bg-white px-3 py-2.5 text-sm text-[#22332c] dark:border-white/20 dark:bg-[#112128] dark:text-[#d8efe4]"
+                                    />
+                                </div>
+
+                                <DialogFooter className="gap-2">
+                                    <DialogClose asChild>
+                                        <button
+                                            type="button"
+                                            onClick={closeClaimDialog}
+                                            className="rounded-xl border border-[#c7d8d1] bg-white px-3 py-1.5 text-xs font-semibold text-[#355f4f] transition hover:bg-[#f2faf6] dark:border-white/20 dark:bg-white/8 dark:text-[#c8e6da]"
+                                        >
+                                            Not now
+                                        </button>
+                                    </DialogClose>
+                                    <button
+                                        type="submit"
+                                        disabled={!claimAt || !dueAt}
+                                        className="rounded-xl bg-[linear-gradient(90deg,#226ea8_0%,#1d5b8a_100%)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        Confirm claim
+                                    </button>
+                                </DialogFooter>
+                            </form>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

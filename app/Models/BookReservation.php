@@ -17,6 +17,8 @@ class BookReservation extends Model
         'queue_position',
         'queued_at',
         'fulfilled_at',
+        'claim_at',
+        'member_due_at',
         'cancelled_at',
     ];
 
@@ -25,6 +27,8 @@ class BookReservation extends Model
         return [
             'queued_at' => 'datetime',
             'fulfilled_at' => 'datetime',
+            'claim_at' => 'datetime',
+            'member_due_at' => 'date',
             'cancelled_at' => 'datetime',
         ];
     }
