@@ -1,3 +1,4 @@
+import process from 'node:process';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import {
