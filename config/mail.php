@@ -61,6 +61,10 @@ return [
             // ],
         ],
 
+        'resend' => [
+            'transport' => 'resend',
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
@@ -72,12 +76,6 @@ return [
         ],
 
         'array' => [
-            'transport' => 'array',
-        ],
-
-        'gmail_api' => [
-            // Actual delivery is handled by App\Services\GmailApiMailerService.
-            // Keep a declared transport so Laravel recognizes MAIL_MAILER=gmail_api.
             'transport' => 'array',
         ],
 

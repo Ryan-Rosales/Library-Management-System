@@ -19,18 +19,10 @@ services:
       - key: APP_KEY
         sync: false
       - key: DB_CONNECTION
-        sync: false
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
       - key: DB_URL
-        sync: false
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        sync: false
-      - key: DB_DATABASE
-        sync: false
-      - key: DB_USERNAME
-        sync: false
-      - key: DB_PASSWORD
         sync: false
       - key: QUEUE_CONNECTION
         value: database
@@ -39,15 +31,9 @@ services:
       - key: CACHE_STORE
         value: file
       - key: MAIL_MAILER
-        value: gmail_api
-      - key: GMAIL_API_CLIENT_ID
+        value: resend
+      - key: RESEND_API_KEY
         sync: false
-      - key: GMAIL_API_CLIENT_SECRET
-        sync: false
-      - key: GMAIL_API_REFRESH_TOKEN
-        sync: false
-      - key: GMAIL_API_USER
-        value: me
       - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME
@@ -72,18 +58,10 @@ services:
       - key: APP_KEY
         sync: false
       - key: DB_CONNECTION
-        sync: false
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
       - key: DB_URL
-        sync: false
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        sync: false
-      - key: DB_DATABASE
-        sync: false
-      - key: DB_USERNAME
-        sync: false
-      - key: DB_PASSWORD
         sync: false
       - key: QUEUE_CONNECTION
         value: database
@@ -92,15 +70,9 @@ services:
       - key: CACHE_STORE
         value: file
       - key: MAIL_MAILER
-        value: gmail_api
-      - key: GMAIL_API_CLIENT_ID
+        value: resend
+      - key: RESEND_API_KEY
         sync: false
-      - key: GMAIL_API_CLIENT_SECRET
-        sync: false
-      - key: GMAIL_API_REFRESH_TOKEN
-        sync: false
-      - key: GMAIL_API_USER
-        value: me
       - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME

@@ -8,64 +8,31 @@ use App\Mail\PasswordResetRejectedNoticeMail;
 use App\Mail\PasswordResetVerificationLinkMail;
 use App\Mail\StaffWelcomeCredentialsMail;
 use Illuminate\Support\Facades\Mail;
-use Throwable;
 use RuntimeException;
 
 class TransactionalMailService
 {
-    public function __construct(
-        private readonly GmailApiMailerService $gmailApiMailer,
-    ) {
-    }
-
-    private function usingGmailApiMailer(): bool
-    {
-        $configured = strtolower((string) config('mail.default'));
-        $runtime = strtolower((string) env('MAIL_MAILER', $configured));
-
-        return $configured === 'gmail_api' || $runtime === 'gmail_api';
-    }
-
-    private function queueOrFallbackToGmailApi(string $recipientEmail, \Illuminate\Mail\Mailable $mailable): void
-    {
-        try {
-            Mail::to($recipientEmail)->queue($mailable);
-        } catch (Throwable $exception) {
-            $message = $exception->getMessage();
-
-            if ($this->usingGmailApiMailer() && str_contains($message, 'Mailer [gmail_api] is not defined')) {
-                $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-                return;
-            }
-
-            throw $exception;
-        }
-    }
-
     private function ensureConfiguredMailer(): void
     {
         $defaultMailer = (string) config('mail.default');
 
-        if ($defaultMailer === 'gmail_api') {
-            $clientId = (string) env('GMAIL_API_CLIENT_ID');
-            $clientSecret = (string) env('GMAIL_API_CLIENT_SECRET');
-            $refreshToken = (string) env('GMAIL_API_REFRESH_TOKEN');
+        if (in_array($defaultMailer, ['log', 'array'], true)) {
+            throw new RuntimeException('MAIL_MAILER is set to "'.$defaultMailer.'". This driver does not deliver real emails. Set MAIL_MAILER=resend with a valid RESEND_API_KEY.');
+        }
+
+        if ($defaultMailer === 'resend') {
+            $resendKey = (string) (config('services.resend.key') ?? '');
             $fromAddress = (string) config('mail.from.address');
 
-            if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
-                throw new RuntimeException('Gmail API mailer requires GMAIL_API_CLIENT_ID, GMAIL_API_CLIENT_SECRET, and GMAIL_API_REFRESH_TOKEN.');
+            if ($resendKey === '') {
+                throw new RuntimeException('Resend mailer requires RESEND_API_KEY or RESEND_KEY to be set.');
             }
 
             if ($fromAddress === '') {
-                throw new RuntimeException('MAIL_FROM_ADDRESS is required when using Gmail API mailer.');
+                throw new RuntimeException('MAIL_FROM_ADDRESS is required when using the Resend mailer.');
             }
 
             return;
-        }
-
-        if (in_array($defaultMailer, ['log', 'array'], true)) {
-            throw new RuntimeException('MAIL_MAILER is set to "'.$defaultMailer.'". This driver does not deliver real emails. Configure SMTP first.');
         }
 
         if ($defaultMailer === 'smtp') {
@@ -91,13 +58,7 @@ class TransactionalMailService
             generatedPassword: $generatedPassword,
         );
 
-        if ($this->usingGmailApiMailer()) {
-            $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-            return;
-        }
-
-        $this->queueOrFallbackToGmailApi($recipientEmail, $mailable);
+        Mail::to($recipientEmail)->queue($mailable);
     }
 
     public function sendStaffWelcomeCredentials(string $recipientEmail, string $recipientName, string $generatedPassword): void
@@ -110,13 +71,7 @@ class TransactionalMailService
             generatedPassword: $generatedPassword,
         );
 
-        if ($this->usingGmailApiMailer()) {
-            $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-            return;
-        }
-
-        $this->queueOrFallbackToGmailApi($recipientEmail, $mailable);
+        Mail::to($recipientEmail)->queue($mailable);
     }
 
     public function sendPasswordResetVerificationLink(
@@ -137,13 +92,7 @@ class TransactionalMailService
             verificationUrl: $verificationUrl,
         );
 
-        if ($this->usingGmailApiMailer()) {
-            $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-            return;
-        }
-
-        $this->queueOrFallbackToGmailApi($recipientEmail, $mailable);
+        Mail::to($recipientEmail)->queue($mailable);
     }
 
     public function sendPasswordResetChangedNotice(
@@ -163,13 +112,7 @@ class TransactionalMailService
             changedByRole: $changedByRole,
         );
 
-        if ($this->usingGmailApiMailer()) {
-            $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-            return;
-        }
-
-        $this->queueOrFallbackToGmailApi($recipientEmail, $mailable);
+        Mail::to($recipientEmail)->queue($mailable);
     }
 
     public function sendPasswordResetRejectedNotice(
@@ -188,12 +131,6 @@ class TransactionalMailService
             rejectedByRole: $rejectedByRole,
         );
 
-        if ($this->usingGmailApiMailer()) {
-            $this->gmailApiMailer->sendMailable($recipientEmail, $mailable);
-
-            return;
-        }
-
-        $this->queueOrFallbackToGmailApi($recipientEmail, $mailable);
+        Mail::to($recipientEmail)->queue($mailable);
     }
 }
