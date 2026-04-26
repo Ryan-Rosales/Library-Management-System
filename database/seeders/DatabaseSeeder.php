@@ -19,13 +19,14 @@ class DatabaseSeeder extends Seeder
             CatalogSeeder::class,
         ]);
 
-        User::firstOrCreate([
-            'email' => 'test@example.com',
-        ], [
-            'name' => 'Test User',
-            'role' => 'member',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'role' => 'member',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+        );
     }
 }
