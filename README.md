@@ -246,6 +246,8 @@ Required secrets/config on Render:
 - `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
 - `MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`
 
+If you use Supabase, set `DB_USERNAME` to the full pooler user from the dashboard, such as `postgres.<project-ref>`, and keep `DB_HOST`/`DB_PORT` aligned with the same connection string.
+
 Queue note:
 
 - Keep the `libraria-queue` worker running, or transactional emails will stay in the `jobs` table and not be sent.

@@ -22,7 +22,15 @@ services:
         value: pgsql
       - key: DB_SSLMODE
         value: require
-      - key: DB_URL
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
         sync: false
       - key: QUEUE_CONNECTION
         value: database
@@ -61,7 +69,15 @@ services:
         value: pgsql
       - key: DB_SSLMODE
         value: require
-      - key: DB_URL
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
         sync: false
       - key: QUEUE_CONNECTION
         value: database
