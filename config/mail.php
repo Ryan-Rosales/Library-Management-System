@@ -61,8 +61,12 @@ return [
             // ],
         ],
 
-        'resend' => [
-            'transport' => 'resend',
+        'gmail_api' => [
+            'transport' => 'gmail_api',
+            'client_id' => env('GMAIL_API_CLIENT_ID'),
+            'client_secret' => env('GMAIL_API_CLIENT_SECRET'),
+            'refresh_token' => env('GMAIL_API_REFRESH_TOKEN'),
+            'user' => env('GMAIL_API_USER', 'me'),
         ],
 
         'sendmail' => [

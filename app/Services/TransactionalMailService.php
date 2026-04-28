@@ -17,19 +17,16 @@ class TransactionalMailService
         $defaultMailer = (string) config('mail.default');
 
         if (in_array($defaultMailer, ['log', 'array'], true)) {
-            throw new RuntimeException('MAIL_MAILER is set to "'.$defaultMailer.'". This driver does not deliver real emails. Set MAIL_MAILER=resend with a valid RESEND_API_KEY.');
+            throw new RuntimeException('MAIL_MAILER is set to "'.$defaultMailer.'". This driver does not deliver real emails. Set MAIL_MAILER to a real mail driver (e.g. gmail_api or smtp) and provide valid credentials.');
         }
 
-        if ($defaultMailer === 'resend') {
-            $resendKey = (string) (config('services.resend.key') ?? '');
-            $fromAddress = (string) config('mail.from.address');
+        if ($defaultMailer === 'gmail_api') {
+            $clientId = (string) config('mail.mailers.gmail_api.client_id');
+            $clientSecret = (string) config('mail.mailers.gmail_api.client_secret');
+            $refreshToken = (string) config('mail.mailers.gmail_api.refresh_token');
 
-            if ($resendKey === '') {
-                throw new RuntimeException('Resend mailer requires RESEND_API_KEY or RESEND_KEY to be set.');
-            }
-
-            if ($fromAddress === '') {
-                throw new RuntimeException('MAIL_FROM_ADDRESS is required when using the Resend mailer.');
+            if ($clientId === '' || $clientSecret === '' || $refreshToken === '') {
+                throw new RuntimeException('Gmail API requires GMAIL_API_CLIENT_ID, GMAIL_API_CLIENT_SECRET, and GMAIL_API_REFRESH_TOKEN to be set in the environment.');
             }
 
             return;

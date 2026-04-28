@@ -154,7 +154,9 @@ Terminal 3:
 php artisan queue:work database
 ```
 
-Open: http://127.0.0.1:8000
+Open: http://127.0.0.1:5173
+
+Note: `npm run dev` now starts the Laravel app on port `5173` and Vite on port `5174`, so the browser can hit the same port the stack trace uses locally.
 
 ## 8. Quality checks
 

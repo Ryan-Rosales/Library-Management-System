@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -22,9 +23,9 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(Request $request): Response
     {
-        $booksCount = Schema::hasTable('books') ? Book::query()->count() : 0;
-        $membersCount = Schema::hasTable('users') ? User::query()->where('role', 'member')->count() : 0;
-        $onLoanCount = Schema::hasTable('book_copies') ? BookCopy::query()->whereIn('status', ['borrowed', 'issued', 'on_loan'])->count() : 0;
+        $booksCount = $this->safeCount(fn () => Schema::hasTable('books') ? Book::query()->count() : 0);
+        $membersCount = $this->safeCount(fn () => Schema::hasTable('users') ? User::query()->where('role', 'member')->count() : 0);
+        $onLoanCount = $this->safeCount(fn () => Schema::hasTable('book_copies') ? BookCopy::query()->whereIn('status', ['borrowed', 'issued', 'on_loan'])->count() : 0);
 
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
@@ -35,6 +36,18 @@ class AuthenticatedSessionController extends Controller
                 'onLoan' => number_format($onLoanCount),
             ],
         ]);
+    }
+
+    /**
+     * Resolve a login statistic without letting a database outage break the page.
+     */
+    private function safeCount(callable $resolver): int
+    {
+        try {
+            return (int) $resolver();
+        } catch (Throwable) {
+            return 0;
+        }
     }
 
     /**

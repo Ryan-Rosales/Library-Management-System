@@ -24,8 +24,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'resend' => [
-        'key' => env('RESEND_KEY', env('RESEND_API_KEY')),
+    'gmail' => [
+        'client_id' => env('GMAIL_API_CLIENT_ID'),
+        'client_secret' => env('GMAIL_API_CLIENT_SECRET'),
+        'refresh_token' => env('GMAIL_API_REFRESH_TOKEN'),
+        'user' => env('GMAIL_API_USER', 'me'),
     ],
 
     'slack' => [
